@@ -186,14 +186,6 @@ input:focus-visible + .interruptor-pista {
 .icono-twitch { color: #9146ff; }
 .icono-info { color: var(--texto-suave); }
 
-.pronto {
-  margin-left: auto;
-  padding: 1px 5px;
-  border-radius: 4px;
-  background: var(--fondo-hover);
-  font-size: 10px;
-}
-
 .lista-separador {
   flex: 1;
 }
@@ -248,8 +240,7 @@ body.pausado .interruptor-texto {
   font-weight: 600;
 }
 
-body.pausado #panel-twitter .opcion,
-body.pausado #panel-twitch .opcion {
+body.pausado .panel:not(#panel-info) .opcion {
   opacity: 0.5;
 }
 

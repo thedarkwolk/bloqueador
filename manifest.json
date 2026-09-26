@@ -25,6 +25,11 @@
       "run_at": "document_idle"
     },
     {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["src/comun/ajustes.js", "src/comun/ocultar.js", "src/sitios/youtube.js"],
+      "run_at": "document_idle"
+    },
+    {
       "matches": ["https://www.twitch.tv/*"],
       "js": ["src/comun/ajustes.js", "src/comun/ocultar.js", "src/sitios/twitch.js"],
       "run_at": "document_idle"

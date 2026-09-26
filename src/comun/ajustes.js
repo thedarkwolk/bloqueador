@@ -20,6 +20,12 @@ globalThis.BloqueadorAjustes = (() => {
       estudio: true,
       aQuienSeguir: true
     },
+    youtube: {
+      anunciosVideo: true,
+      shorts: true,
+      anuncios: true,
+      premium: true
+    },
     twitch: {
       anunciosDirecto: true,
       anuncios: true,
