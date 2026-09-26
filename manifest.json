@@ -30,7 +30,7 @@
     },
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["src/comun/ajustes.js", "src/comun/ocultar.js", "src/sitios/twitter.js", "src/sitios/twitter-videos.js"],
+      "js": ["src/comun/ajustes.js", "src/comun/ocultar.js", "src/sitios/twitter.js", "src/sitios/twitter-acciones.js"],
       "run_at": "document_idle"
     },
     {

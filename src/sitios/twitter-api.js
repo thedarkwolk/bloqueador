@@ -5,7 +5,7 @@
  * (video_info.variants). Este script corre en el contexto de la propia página
  * (world: "MAIN", document_start) para poder envolver fetch y XMLHttpRequest
  * antes de que X haga sus peticiones, y pasa lo que encuentra al content
- * script (twitter-videos.js) con postMessage.
+ * script (twitter-acciones.js) con postMessage.
  * No tiene acceso a chrome.* ni a los ajustes: si la opción está desactivada,
  * el content script ignora los mensajes.
  */
