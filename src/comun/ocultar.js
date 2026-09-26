@@ -15,21 +15,28 @@ globalThis.BloqueadorOcultar = (() => {
 
   /**
    * `selectores` agrupa los selectores CSS por opción del popup, con las
-   * mismas claves que ajustes[sitio]. Devuelve una función que da los
-   * ajustes actuales (se cargan de forma asíncrona).
+   * mismas claves que ajustes[sitio]. `reglas` (opcional) añade CSS propio por
+   * opción, para lo que no es simplemente ocultar (p. ej. cambiar un texto).
+   * Devuelve una función que da los ajustes actuales (se cargan de forma
+   * asíncrona).
    */
-  function iniciar(sitio, selectores) {
+  function iniciar(sitio, selectores, reglas = {}) {
     let ajustes = BloqueadorAjustes.POR_DEFECTO;
     const hoja = document.createElement('style');
 
     function actualizar() {
-      const activos = ajustes.activo
-        ? Object.entries(selectores)
-          .filter(([opcion]) => ajustes[sitio][opcion])
-          .flatMap(([, lista]) => lista)
-        : [];
+      const activa = (opcion) => ajustes.activo && ajustes[sitio][opcion];
+      const activos = Object.entries(selectores)
+        .filter(([opcion]) => activa(opcion))
+        .flatMap(([, lista]) => lista);
       const regla = ajustes.modoRevision ? ESTILO_REVISION : ESTILO_OCULTAR;
-      hoja.textContent = activos.length ? `${activos.join(',\n')} { ${regla} }` : '';
+      const extra = Object.entries(reglas)
+        .filter(([opcion]) => activa(opcion))
+        .map(([, css]) => css);
+      hoja.textContent = [
+        activos.length ? `${activos.join(',\n')} { ${regla} }` : '',
+        ...extra
+      ].join('\n');
     }
 
     document.head.appendChild(hoja);

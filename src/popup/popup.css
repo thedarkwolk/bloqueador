@@ -128,8 +128,8 @@ input:focus-visible + .interruptor-pista {
   display: grid;
   grid-template-columns: 150px 1fr;
   /* Altura fija para que el popup no cambie de tamaño al cambiar de panel.
-     Cabe el panel más largo (Twitch, 7 opciones); si crece, el panel hace scroll */
-  height: 452px;
+     Los paneles más largos (Twitch) hacen scroll dentro */
+  height: 505px;
 }
 
 .lista {
@@ -214,6 +214,15 @@ input:focus-visible + .interruptor-pista {
   margin: 2px 0 10px;
   color: var(--texto-suave);
   font-size: 12px;
+}
+
+.seccion {
+  margin: 14px 0 2px;
+  color: var(--texto-suave);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .opcion {

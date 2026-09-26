@@ -90,14 +90,25 @@
         <h2>Twitch</h2>
         <p class="panel-subtitulo">Qué ocultar en twitch.tv</p>
 
+        <h3 class="seccion">Anuncios</h3>
         <label class="opcion">
           <span class="opcion-texto">
-            <strong>Anuncios</strong>
-            <small>Anuncios de la portada y tarjetas de vídeo entre canales</small>
+            <strong>Anuncios en directo</strong>
+            <small>Durante la pausa publicitaria, ver y oír el directo en vez del anuncio</small>
+          </span>
+          <input type="checkbox" data-ajuste="twitch.anunciosDirecto">
+          <span class="interruptor-pista" aria-hidden="true"></span>
+        </label>
+        <label class="opcion">
+          <span class="opcion-texto">
+            <strong>Anuncios de la página</strong>
+            <small>Portada, vídeos junto al chat y banners patrocinados</small>
           </span>
           <input type="checkbox" data-ajuste="twitch.anuncios">
           <span class="interruptor-pista" aria-hidden="true"></span>
         </label>
+
+        <h3 class="seccion">Promociones</h3>
         <label class="opcion">
           <span class="opcion-texto">
             <strong>Turbo</strong>
@@ -117,9 +128,43 @@
         <label class="opcion">
           <span class="opcion-texto">
             <strong>Bits</strong>
-            <small>Botón para comprar Bits</small>
+            <small>Botones y saldo de Bits en la barra superior, el canal y el chat</small>
           </span>
           <input type="checkbox" data-ajuste="twitch.bits">
+          <span class="interruptor-pista" aria-hidden="true"></span>
+        </label>
+        <label class="opcion">
+          <span class="opcion-texto">
+            <strong>Regalar suscripciones</strong>
+            <small>Botón «Regalo: suscripciones extra»</small>
+          </span>
+          <input type="checkbox" data-ajuste="twitch.regalos">
+          <span class="interruptor-pista" aria-hidden="true"></span>
+        </label>
+        <label class="opcion">
+          <span class="opcion-texto">
+            <strong>Botón de suscripción corto</strong>
+            <small>Solo «Suscribirse», sin el texto de descuento</small>
+          </span>
+          <input type="checkbox" data-ajuste="twitch.textoSuscribirse">
+          <span class="interruptor-pista" aria-hidden="true"></span>
+        </label>
+
+        <h3 class="seccion">Distracciones</h3>
+        <label class="opcion">
+          <span class="opcion-texto">
+            <strong>Mayores donantes</strong>
+            <small>Clasificación encima del chat</small>
+          </span>
+          <input type="checkbox" data-ajuste="twitch.donantes">
+          <span class="interruptor-pista" aria-hidden="true"></span>
+        </label>
+        <label class="opcion">
+          <span class="opcion-texto">
+            <strong>Avisos del chat</strong>
+            <small>Drops, mensajes fijados y tarjetas de eventos encima del chat</small>
+          </span>
+          <input type="checkbox" data-ajuste="twitch.avisosChat">
           <span class="interruptor-pista" aria-hidden="true"></span>
         </label>
         <label class="opcion">
@@ -128,6 +173,14 @@
             <small>Número rojo en notificaciones y Prime</small>
           </span>
           <input type="checkbox" data-ajuste="twitch.contadores">
+          <span class="interruptor-pista" aria-hidden="true"></span>
+        </label>
+        <label class="opcion">
+          <span class="opcion-texto">
+            <strong>Campana</strong>
+            <small>Avisos del canal, junto al botón de seguir</small>
+          </span>
+          <input type="checkbox" data-ajuste="twitch.campana">
           <span class="interruptor-pista" aria-hidden="true"></span>
         </label>
         <label class="opcion">

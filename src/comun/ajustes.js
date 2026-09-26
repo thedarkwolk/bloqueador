@@ -21,11 +21,17 @@ globalThis.BloqueadorAjustes = (() => {
       aQuienSeguir: true
     },
     twitch: {
+      anunciosDirecto: true,
       anuncios: true,
       turbo: true,
       prime: true,
       bits: true,
+      regalos: true,
+      textoSuscribirse: true,
+      donantes: true,
+      avisosChat: true,
       contadores: true,
+      campana: true,
       historias: true,
       rachas: true
     }
