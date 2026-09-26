@@ -2,8 +2,8 @@
  * Bloqueador - Twitter/X
  * Oculta los tweets promocionados del timeline, respuestas y búsquedas,
  * y elementos promocionales de la interfaz (Premium, Grok, "A quién seguir"…).
- * Qué se oculta lo decide el popup (ver src/comun/ajustes.js). Con el modo
- * revisión activo, lo bloqueado se marca en rojo en vez de ocultarse.
+ * Qué se oculta lo decide el popup (ver src/comun/ajustes.js y ocultar.js).
+ * Con el modo revisión activo, lo bloqueado se marca en rojo en vez de ocultarse.
  *
  * X es una SPA con lista virtualizada: los tweets se crean y destruyen al hacer
  * scroll, así que usamos un MutationObserver y revisamos los tweets nuevos.
@@ -46,18 +46,13 @@
     ]
   };
 
-  const ESTILO_OCULTAR = 'display: none !important;';
-  const ESTILO_REVISION =
-    'outline: 3px solid #E0413A !important; outline-offset: -3px !important; opacity: 0.4 !important;';
-
-  let ajustes = BloqueadorAjustes.POR_DEFECTO;
+  const ajustes = BloqueadorOcultar.iniciar('twitter', SELECTORES);
   // IDs de anuncios ya vistos, para no contar dos veces el mismo al hacer scroll
   const anunciosVistos = new Set();
   let pendiente = false;
-  const hojaEstilos = document.createElement('style');
 
   function log(...args) {
-    if (ajustes.modoRevision) console.log('[Bloqueador:Twitter]', ...args);
+    if (ajustes().modoRevision) console.log('[Bloqueador:Twitter]', ...args);
   }
 
   /**
@@ -91,8 +86,8 @@
     return `${usuario}|${texto.slice(0, 80)}`;
   }
 
-  // Solo marca la celda; ocultarla o no lo decide la hoja de estilos, así el
-  // popup puede activar y desactivar la opción sin recargar la página
+  // Solo marca la celda; ocultarla o no lo decide la hoja de estilos de
+  // BloqueadorOcultar, así el popup puede activar y desactivar la opción al momento
   function marcar(tweet) {
     // Marcamos la celda entera de la lista para no dejar huecos al ocultarla
     const celda = tweet.closest('[data-testid="cellInnerDiv"]') || tweet;
@@ -120,37 +115,6 @@
     pendiente = true;
     requestAnimationFrame(revisar);
   }
-
-  /**
-   * Todo se oculta con una única hoja de estilos: X vuelve a renderizar el menú
-   * y las columnas al navegar, y la hoja se sigue aplicando sin tener que
-   * revisar cada elemento. Se regenera cada vez que cambian los ajustes.
-   */
-  function actualizarEstilos() {
-    const selectores = ajustes.activo
-      ? Object.entries(SELECTORES)
-        .filter(([opcion]) => ajustes.twitter[opcion])
-        .flatMap(([, lista]) => lista)
-      : [];
-    const regla = ajustes.modoRevision ? ESTILO_REVISION : ESTILO_OCULTAR;
-    hojaEstilos.textContent = selectores.length ? `${selectores.join(',\n')} { ${regla} }` : '';
-  }
-
-  document.head.appendChild(hojaEstilos);
-
-  BloqueadorAjustes.alCambiar((nuevos) => {
-    ajustes = nuevos;
-    actualizarEstilos();
-    log('Ajustes actualizados', ajustes);
-  });
-
-  BloqueadorAjustes.cargar().then((guardados) => {
-    ajustes = guardados;
-    actualizarEstilos();
-    log('Activo', ajustes);
-  });
-
-  actualizarEstilos();
 
   const observer = new MutationObserver(programarRevision);
   observer.observe(document.body, { childList: true, subtree: true });

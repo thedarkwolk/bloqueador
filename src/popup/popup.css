@@ -127,8 +127,9 @@ input:focus-visible + .interruptor-pista {
 .cuerpo {
   display: grid;
   grid-template-columns: 150px 1fr;
-  /* Altura fija para que el popup no cambie de tamaño al cambiar de panel */
-  height: 392px;
+  /* Altura fija para que el popup no cambie de tamaño al cambiar de panel.
+     Cabe el panel más largo (Twitch, 7 opciones); si crece, el panel hace scroll */
+  height: 452px;
 }
 
 .lista {
@@ -202,6 +203,7 @@ input:focus-visible + .interruptor-pista {
 .paneles {
   padding: 14px 16px;
   overflow-y: auto;
+  scrollbar-width: thin;
 }
 
 .panel h2 {
@@ -237,7 +239,8 @@ body.pausado .interruptor-texto {
   font-weight: 600;
 }
 
-body.pausado #panel-twitter .opcion {
+body.pausado #panel-twitter .opcion,
+body.pausado #panel-twitch .opcion {
   opacity: 0.5;
 }
 

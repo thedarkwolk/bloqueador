@@ -19,6 +19,15 @@ globalThis.BloqueadorAjustes = (() => {
       grok: true,
       estudio: true,
       aQuienSeguir: true
+    },
+    twitch: {
+      anuncios: true,
+      turbo: true,
+      prime: true,
+      bits: true,
+      contadores: true,
+      historias: true,
+      rachas: true
     }
   };
 

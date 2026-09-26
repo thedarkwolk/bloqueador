@@ -28,10 +28,9 @@
         <span>YouTube</span>
         <span class="pronto">Pronto</span>
       </button>
-      <button class="lista-item" role="tab" disabled>
+      <button class="lista-item" role="tab" data-panel="twitch" aria-selected="false">
         <svg class="lista-icono icono-twitch" aria-hidden="true" viewBox="0 0 256 256" fill="currentColor"><path d="M208,32H48A16,16,0,0,0,32,48V192a16,16,0,0,0,16,16H64v32a8,8,0,0,0,13.12,6.15L122.9,208h42.2a16,16,0,0,0,10.25-3.71l42.89-35.75A15.93,15.93,0,0,0,224,156.25V48A16,16,0,0,0,208,32ZM128,136a8,8,0,0,1-16,0V88a8,8,0,0,1,16,0Zm48,0a8,8,0,0,1-16,0V88a8,8,0,0,1,16,0Z"/></svg>
         <span>Twitch</span>
-        <span class="pronto">Pronto</span>
       </button>
       <span class="lista-separador"></span>
       <button class="lista-item" role="tab" data-panel="info" aria-selected="false">
@@ -83,6 +82,68 @@
             <small>Sugerencias de cuentas en la columna derecha</small>
           </span>
           <input type="checkbox" data-ajuste="twitter.aQuienSeguir">
+          <span class="interruptor-pista" aria-hidden="true"></span>
+        </label>
+      </section>
+
+      <section class="panel" id="panel-twitch" role="tabpanel" hidden>
+        <h2>Twitch</h2>
+        <p class="panel-subtitulo">Qué ocultar en twitch.tv</p>
+
+        <label class="opcion">
+          <span class="opcion-texto">
+            <strong>Anuncios</strong>
+            <small>Anuncios de la portada y tarjetas de vídeo entre canales</small>
+          </span>
+          <input type="checkbox" data-ajuste="twitch.anuncios">
+          <span class="interruptor-pista" aria-hidden="true"></span>
+        </label>
+        <label class="opcion">
+          <span class="opcion-texto">
+            <strong>Turbo</strong>
+            <small>Botón «Prueba 1 mes sin anuncios»</small>
+          </span>
+          <input type="checkbox" data-ajuste="twitch.turbo">
+          <span class="interruptor-pista" aria-hidden="true"></span>
+        </label>
+        <label class="opcion">
+          <span class="opcion-texto">
+            <strong>Prime</strong>
+            <small>Corona de ofertas de Prime Gaming</small>
+          </span>
+          <input type="checkbox" data-ajuste="twitch.prime">
+          <span class="interruptor-pista" aria-hidden="true"></span>
+        </label>
+        <label class="opcion">
+          <span class="opcion-texto">
+            <strong>Bits</strong>
+            <small>Botón para comprar Bits</small>
+          </span>
+          <input type="checkbox" data-ajuste="twitch.bits">
+          <span class="interruptor-pista" aria-hidden="true"></span>
+        </label>
+        <label class="opcion">
+          <span class="opcion-texto">
+            <strong>Contadores</strong>
+            <small>Número rojo en notificaciones y Prime</small>
+          </span>
+          <input type="checkbox" data-ajuste="twitch.contadores">
+          <span class="interruptor-pista" aria-hidden="true"></span>
+        </label>
+        <label class="opcion">
+          <span class="opcion-texto">
+            <strong>Historias</strong>
+            <small>«Abrir historias» en la barra izquierda</small>
+          </span>
+          <input type="checkbox" data-ajuste="twitch.historias">
+          <span class="interruptor-pista" aria-hidden="true"></span>
+        </label>
+        <label class="opcion">
+          <span class="opcion-texto">
+            <strong>Rachas</strong>
+            <small>«¡Mantén tu racha!» en la barra izquierda</small>
+          </span>
+          <input type="checkbox" data-ajuste="twitch.rachas">
           <span class="interruptor-pista" aria-hidden="true"></span>
         </label>
       </section>
