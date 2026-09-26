@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Bloqueador",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Bloqueador de anuncios personal para Twitter/X, YouTube, Twitch y webs en general.",
   "icons": {
     "16": "icons/icon16.png",
@@ -9,7 +9,10 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": ["storage"],
+  "permissions": ["storage", "downloads"],
+  "background": {
+    "service_worker": "src/fondo.js"
+  },
   "action": {
     "default_title": "Bloqueador",
     "default_popup": "src/popup/popup.html",
@@ -21,7 +24,13 @@
   "content_scripts": [
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["src/comun/ajustes.js", "src/comun/ocultar.js", "src/sitios/twitter.js"],
+      "js": ["src/sitios/twitter-api.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://x.com/*", "https://twitter.com/*"],
+      "js": ["src/comun/ajustes.js", "src/comun/ocultar.js", "src/sitios/twitter.js", "src/sitios/twitter-videos.js"],
       "run_at": "document_idle"
     },
     {
