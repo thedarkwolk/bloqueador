@@ -1,0 +1,265 @@
+:root {
+  --fondo: #ffffff;
+  --fondo-lista: #f6f6f7;
+  --fondo-hover: #ececee;
+  --texto: #1c1c1e;
+  --texto-suave: #6b6b70;
+  --borde: #e3e3e6;
+  --acento: #e0413a;
+  --acento-suave: #fde9e8;
+  --pista-apagada: #c9c9ce;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --fondo: #1d1d1f;
+    --fondo-lista: #161618;
+    --fondo-hover: #2a2a2d;
+    --texto: #f2f2f4;
+    --texto-suave: #9a9aa0;
+    --borde: #2f2f33;
+    --acento-suave: #3a1f1e;
+    --pista-apagada: #4a4a4f;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  width: 480px;
+  margin: 0;
+  background: var(--fondo);
+  color: var(--texto);
+  font: 13px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+h1,
+h2 {
+  margin: 0;
+}
+
+/* Cabecera */
+
+.cabecera {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--borde);
+}
+
+.cabecera h1 {
+  flex: 1;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+/* Interruptores (checkbox con aspecto de switch) */
+
+.interruptor,
+.opcion {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.interruptor-texto {
+  color: var(--texto-suave);
+  font-size: 12px;
+}
+
+input[type="checkbox"][data-ajuste] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.interruptor-pista {
+  position: relative;
+  flex: none;
+  width: 34px;
+  height: 20px;
+  border-radius: 10px;
+  background: var(--pista-apagada);
+}
+
+.interruptor-pista::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.25);
+}
+
+/* Solo se anima tras cargar los ajustes, para que al abrir el popup
+   los interruptores no se vean pasar de apagado a encendido */
+body.listo .interruptor-pista {
+  transition: background 0.15s;
+}
+
+body.listo .interruptor-pista::after {
+  transition: transform 0.15s;
+}
+
+input:checked + .interruptor-pista {
+  background: var(--acento);
+}
+
+input:checked + .interruptor-pista::after {
+  transform: translateX(14px);
+}
+
+input:focus-visible + .interruptor-pista {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+/* Cuerpo: lista a la izquierda, panel a la derecha */
+
+.cuerpo {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  /* Altura fija para que el popup no cambie de tamaño al cambiar de panel */
+  height: 392px;
+}
+
+.lista {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  background: var(--fondo-lista);
+  border-right: 1px solid var(--borde);
+}
+
+.lista-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.lista-item:hover:not(:disabled) {
+  background: var(--fondo-hover);
+}
+
+.lista-item[aria-selected="true"] {
+  background: var(--acento-suave);
+  font-weight: 600;
+}
+
+.lista-item:disabled {
+  color: var(--texto-suave);
+  cursor: default;
+}
+
+.lista-item:disabled .lista-icono {
+  opacity: 0.5;
+}
+
+.lista-icono {
+  flex: none;
+  width: 20px;
+  height: 20px;
+}
+
+/* Los SVG usan currentColor, así que el color de marca va en `color` */
+.icono-x { color: var(--texto); }
+.icono-youtube { color: #ff0033; }
+.icono-twitch { color: #9146ff; }
+.icono-info { color: var(--texto-suave); }
+
+.pronto {
+  margin-left: auto;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--fondo-hover);
+  font-size: 10px;
+}
+
+.lista-separador {
+  flex: 1;
+}
+
+/* Paneles */
+
+.paneles {
+  padding: 14px 16px;
+  overflow-y: auto;
+}
+
+.panel h2 {
+  font-size: 15px;
+}
+
+.panel-subtitulo {
+  margin: 2px 0 10px;
+  color: var(--texto-suave);
+  font-size: 12px;
+}
+
+.opcion {
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid var(--borde);
+}
+
+.opcion-texto {
+  display: flex;
+  flex-direction: column;
+}
+
+.opcion-texto small {
+  color: var(--texto-suave);
+  font-size: 11.5px;
+}
+
+/* En pausa: el texto de la cabecera lo indica y las opciones se atenúan */
+body.pausado .interruptor-texto {
+  color: var(--acento);
+  font-weight: 600;
+}
+
+body.pausado #panel-twitter .opcion {
+  opacity: 0.5;
+}
+
+/* Panel de info */
+
+.info-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.info-cabecera .panel-subtitulo {
+  margin: 0;
+}
+
+.info-texto {
+  margin: 12px 0 6px;
+}
+
+.info-lista {
+  margin: 0 0 12px;
+  padding-left: 18px;
+  color: var(--texto-suave);
+  font-size: 12px;
+}

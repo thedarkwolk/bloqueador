@@ -1,0 +1,12 @@
+# Extensión empaquetada: el .pem es la clave privada que firma la extensión, nunca se sube
+*.crx
+*.pem
+*.zip
+
+# Ajustes locales de Claude Code (los compartidos, como las skills, sí se versionan)
+.claude/settings.local.json
+
+# Sistema
+Thumbs.db
+desktop.ini
+.DS_Store
