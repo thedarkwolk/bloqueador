@@ -39,6 +39,12 @@
       "run_at": "document_idle"
     },
     {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["src/sitios/youtube-saltar.js"],
+      "run_at": "document_idle",
+      "world": "MAIN"
+    },
+    {
       "matches": ["https://www.twitch.tv/*"],
       "js": ["src/comun/ajustes.js", "src/comun/ocultar.js", "src/sitios/twitch.js", "src/sitios/twitch-directo.js"],
       "run_at": "document_idle"

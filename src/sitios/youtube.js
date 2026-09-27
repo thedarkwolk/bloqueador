@@ -1,6 +1,6 @@
 /**
  * Bloqueador - YouTube
- * - Anuncios de vídeo: se silencian, se aceleran a x16 y se pulsa "Saltar".
+ * - Anuncios de vídeo: se silencian y se aceleran a x16.
  * - Anuncios en Shorts: se pasa al Short siguiente.
  * - Anuncios de la página y promociones de Premium: se ocultan.
  * Qué se hace lo decide el popup (ver src/comun/ajustes.js y ocultar.js).
@@ -45,7 +45,6 @@
     // Mientras se salta un bloque de anuncios: ni un fotograma ni la tarjeta del
     // anunciante, y un aviso para que el negro no parezca un fallo (entre un
     // anuncio y otro YouTube tarda unos segundos en cargar el siguiente).
-    // "Saltar" se pulsa por código aunque esté oculto
     anunciosVideo: `
       #movie_player.ad-showing video,
       #movie_player.ad-showing .ytp-ad-module { opacity: 0 !important; }
@@ -63,16 +62,18 @@
 
   // --- Anuncios de vídeo -----------------------------------------------------
   // Durante un anuncio el reproductor (#movie_player) lleva la clase
-  // "ad-showing" y el <video> reproduce el anuncio. Se silencia, se reproduce a
-  // x16 y se pulsa "Saltar" en cuanto aparece. No se salta al final con
-  // currentTime: YouTube se queda parado varios segundos tras cada salto, y a
-  // x16 el anuncio "termina" solo y pasa al siguiente del bloque sin esperas.
-  // Al acabar se devuelven el sonido y la velocidad como estaban: YouTube
-  // reutiliza el mismo <video> para el vídeo de verdad.
+  // "ad-showing" y el <video> reproduce el anuncio. Lo salta youtube-saltar.js
+  // (mundo de la página), al que se avisa con data-bloqueador-saltar en <html>.
+  // Mientras tanto se silencia y se reproduce a x16, por si tarda o YouTube
+  // cambia algo. No se salta al final con currentTime: YouTube se queda parado
+  // varios segundos tras cada salto. Al acabar se devuelven el sonido y la
+  // velocidad como estaban: YouTube reutiliza el mismo <video> para el vídeo
+  // de verdad.
   const VELOCIDAD_ANUNCIO = 16;
   let previo = null; // { muted, velocidad } antes del primer anuncio del bloque
 
   function saltarAnuncioVideo() {
+    document.documentElement.toggleAttribute('data-bloqueador-saltar', opcion('anunciosVideo'));
     const jugador = document.querySelector('#movie_player');
     const video = jugador?.querySelector('video');
     if (!video) return;
@@ -82,7 +83,6 @@
       // Solo si cambia: estas asignaciones disparan los eventos que escuchamos
       if (!video.muted) video.muted = true;
       if (video.playbackRate !== VELOCIDAD_ANUNCIO) video.playbackRate = VELOCIDAD_ANUNCIO;
-      document.querySelector('.ytp-skip-ad-button, .ytp-ad-skip-button, .ytp-ad-skip-button-modern')?.click();
       if (video.paused) video.play().catch(() => {});
     } else if (previo) {
       video.muted = previo.muted;
