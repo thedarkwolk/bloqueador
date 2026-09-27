@@ -45,6 +45,7 @@ globalThis.BloqueadorAjustes = (() => {
       campana: true,
       historias: true,
       rachas: true,
+      reclamarPuntos: true,
       navegacion: true,
       directoArriba: true,
       soloSeguidos: true,

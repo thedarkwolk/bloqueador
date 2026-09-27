@@ -205,6 +205,16 @@
 
   const ajustes = BloqueadorOcultar.iniciar('twitch', SELECTORES, REGLAS);
 
+  // --- Puntos del canal ------------------------------------------------------
+  // Cada ~15 min de directo aparece junto al saldo de puntos, bajo el chat, un
+  // cofre para reclamar una bonificación. Se reconoce por su icono y no por su
+  // aria-label ("Reclamar bonificación"), que depende del idioma. Con un
+  // intervalo para que también se reclame con la pestaña en segundo plano
+  setInterval(() => {
+    if (!ajustes().activo || !ajustes().twitch.reclamarPuntos) return;
+    document.querySelector('[data-test-selector="community-points-summary"] button:has(.claimable-bonus__icon)')?.click();
+  }, 2000);
+
   // twitch-seguidos.js corre en el mundo de la página y no ve los ajustes:
   // se le avisa con un atributo en <html>
   setInterval(() => {
