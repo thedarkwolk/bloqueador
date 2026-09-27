@@ -46,6 +46,7 @@ globalThis.BloqueadorAjustes = (() => {
       historias: true,
       rachas: true,
       navegacion: true,
+      directoArriba: true,
       soloSeguidos: true,
       todosSeguidos: true,
       tarjetasLimpias: true,

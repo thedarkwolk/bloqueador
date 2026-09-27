@@ -79,7 +79,10 @@
     campana: [
       // Preferencias de notificaciones del canal, junto al botón de seguir.
       // Sin atributos propios: se reconoce por su icono, que es único en la página
-      '[data-target="channel-header-right"] div:has(path[d^="M15 19a3 3 0 1 1-6 0h6Z"]):not(:has([data-a-target$="follow-button"]))'
+      '[data-target="channel-header-right"] div:has(path[d^="M15 19a3 3 0 1 1-6 0h6Z"]):not(:has([data-a-target$="follow-button"]))',
+      // Con las notificaciones desactivadas el icono es otro (campana tachada).
+      // Es el único botón de la zona con aria-expanded y sin data-a-target
+      '[data-target="channel-header-right"] div:has(button[aria-expanded]:not([data-a-target])):not(:has([data-a-target$="follow-button"]))'
     ],
     contadores: [
       // Números rojos sobre la campana de notificaciones y la corona de Prime
@@ -133,6 +136,51 @@
     navegacion: `
       .top-nav__menu > div:has([data-a-target="home-link"]) { flex: 0 0 auto !important; width: auto !important; }
       .top-nav__menu > div:has([data-a-target="nav-search-box"]) { justify-content: flex-start !important; }`,
+    // El directo en la barra superior (twitch-directo.js). Va después de
+    // navegacion para que su buscador (a la derecha, estrecho y con borde
+    // discreto; en un directo, oculto) gane.
+    // Los botones de seguir y suscribirse son los de Twitch fijados encima de
+    // la barra: .twilight-main y sus hijos crean capas (z-index) por debajo de
+    // la de la barra (1000) y hay que anularlas para que puedan salir
+    // La columna central ocupa todo el hueco sin depender de su contenido (si
+    // no, un título más largo la ensancha y mueve los botones y el buscador);
+    // las de los lados tienen width: 100 % y se ajustan a lo suyo
+    directoArriba: `
+      .top-nav__menu > div:has([data-a-target="nav-search-box"]) { flex: 1 1 0 !important; min-width: 0 !important; justify-content: flex-end !important; }
+      .top-nav__menu > div:is(:has([data-a-target="home-link"]), :last-child) { flex: 0 0 auto !important; width: auto !important; }
+      .top-nav__search-container { flex: 0 0 220px !important; }
+      .top-nav__search-container input:not(:focus) { box-shadow: inset 0 0 0 1px #3a3a3d !important; }
+      html[data-bloqueador-directo] .top-nav__search-container { display: none !important; }
+      html[data-bloqueador-directo] :is(.twilight-main, .root-scrollable, .channel-root__info) { z-index: auto !important; }
+      html[data-bloqueador-directo] #live-channel-stream-information {
+        visibility: hidden; height: 0 !important; min-height: 0 !important;
+        padding: 0 !important; margin: 0 !important; overflow: visible !important;
+      }
+      html[data-bloqueador-directo] #live-channel-stream-information [data-target="channel-header-right"] {
+        visibility: visible; position: fixed !important; z-index: 1001; margin: 0 !important;
+        left: var(--bloqueador-botones-x); top: var(--bloqueador-botones-y);
+      }
+      /* Corazón de "Dejar de seguir" en morado y centrado: Twitch le deja
+         relleno y un margen a la derecha pensados para un texto que no tiene */
+      html[data-bloqueador-directo] [data-a-target="unfollow-button"] { color: #a970ff !important; }
+      html[data-bloqueador-directo] [data-a-target="unfollow-button"] [data-a-target="tw-core-button-label-text"] { padding: 0 !important; }
+      html[data-bloqueador-directo] [data-a-target="unfollow-button"] [data-a-target="tw-core-button-label-text"] div { margin: 0 !important; }
+      /* Estrella de "Suscribirse" en naranja (el primer icono; el segundo es la flecha) */
+      html[data-bloqueador-directo] [data-a-target="subscribe-button"] > div > div:first-child .tw-core-button-icon { color: #ff9f1a !important; }
+      #bloqueador-directo { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; margin: 0 16px 0 12px; color: #efeff1; font-size: 13px; }
+      /* Separador con el logo */
+      #bloqueador-directo::before { content: ""; flex: none; width: 1px; height: 28px; margin-right: 4px; background: #53535f; }
+      #bloqueador-directo img { flex: none; width: 34px; height: 34px; border-radius: 50%; box-shadow: 0 0 0 2px #e91916; }
+      #bloqueador-directo .texto { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+      #bloqueador-directo .fila { display: flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+      #bloqueador-directo .nombre { font-size: 14px; font-weight: 700; }
+      #bloqueador-directo .sep { color: #adadb8; }
+      #bloqueador-directo .juego { color: #bf94ff; cursor: pointer; }
+      #bloqueador-directo .juego:hover { text-decoration: underline; }
+      #bloqueador-directo .titulo { color: #dedee3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      #bloqueador-directo :is(.espectadores, .tiempo) { margin-left: 4px; font-size: 11px; color: #adadb8; }
+      #bloqueador-directo .espectadores { color: #ff8280; font-weight: 600; }
+      #bloqueador-directo .hueco { flex: none; }`,
     // Tras una pausa publicitaria Twitch encoge el vídeo para poner un banner
     // al lado o debajo: le pone a .video-ref la clase
     // video-player--stream-display-ad_<formato> (lower-third, squeezeback,
