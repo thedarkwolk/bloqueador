@@ -50,6 +50,7 @@
     .bloqueador-cuentas ul { list-style: none; margin: 0; padding: 0; }
     .bloqueador-cuentas li { display: flex; gap: 12px; padding: 12px 16px; cursor: pointer; transition: background-color 0.2s; }
     .bloqueador-cuentas li:hover { background: var(--bc-hover); }
+    .bloqueador-cuentas li + li { border-top: 1px solid var(--bc-borde); }
     .bloqueador-cuentas a { color: inherit; text-decoration: none; }
     .bc-avatar { flex: none; width: 40px; height: 40px; border-radius: 50%; background: var(--bc-borde); object-fit: cover; }
     .bc-cuerpo { flex: 1; min-width: 0; }
@@ -62,6 +63,7 @@
       all: unset; margin-left: auto; flex: none; display: grid; place-items: center;
       width: 26px; height: 26px; border-radius: 50%; color: var(--bc-suave); cursor: pointer;
     }
+    .bloqueador-cuentas:not(.bc-editando) .bc-quitar { display: none; }
     .bc-quitar:hover, .bc-quitar:focus-visible { background: rgba(244, 33, 46, 0.1); color: rgb(244, 33, 46); }
     .bc-quitar svg { width: 16px; height: 16px; fill: currentColor; }
     .bc-rt { color: var(--bc-suave); font-size: 13px; }
@@ -299,8 +301,10 @@
   vacio.textContent = 'Pulsa el icono de arriba para añadir cuentas y ver aquí su último tuit.';
   caja.append(cabecera, formulario, lista, vacio);
 
+  // Con el campo abierto se muestran también las "x" para quitar cuentas
   function mostrarFormulario(mostrar) {
     formulario.hidden = !mostrar;
+    caja.classList.toggle('bc-editando', mostrar);
     botonAnadir.setAttribute('aria-expanded', String(mostrar));
     entrada.value = '';
     entrada.removeAttribute('aria-invalid');
@@ -311,10 +315,11 @@
   entrada.addEventListener('keydown', (evento) => {
     if (evento.key === 'Escape') mostrarFormulario(false);
   });
-  // Al salir del campo sin haber escrito nada se cierra (salvo si es para
-  // pulsar el propio icono, que ya lo cierra)
+  // Al salir del campo sin haber escrito nada se cierra, salvo si es para
+  // pulsar el propio icono (que ya lo cierra) o una "x" (que desaparecería
+  // antes de recibir el clic)
   entrada.addEventListener('blur', (evento) => {
-    if (!entrada.value.trim() && evento.relatedTarget !== botonAnadir) mostrarFormulario(false);
+    if (!entrada.value.trim() && !evento.relatedTarget?.matches('.bc-anadir, .bc-quitar')) mostrarFormulario(false);
   });
 
   // Acepta "usuario", "@usuario" o el enlace al perfil
@@ -399,6 +404,8 @@
     quitar.addEventListener('click', (evento) => {
       evento.stopPropagation();
       guardarCuentas(cuentas.filter((u) => u !== usuario));
+      // Se devuelve el foco al campo para que siga cerrándose al salir de él
+      entrada.focus();
     });
     filaNombre.append(quitar);
 
