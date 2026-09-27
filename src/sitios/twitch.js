@@ -25,7 +25,13 @@
     anunciosDirecto: [
       // Banner "¡Suscríbete para ver contenido sin anuncios…" que sale durante
       // la pausa publicitaria, justo encima del directo en pequeño
-      'div:has(+ .picture-by-picture-player)'
+      'div:has(+ .picture-by-picture-player)',
+      // Banners "Stream Display Ads" dentro del reproductor (en el hueco que
+      // deja el vídeo encogido, ver REGLAS.anunciosDirecto)
+      '[data-test-selector="sda-wrapper"]',
+      // Los mismos banners en modo "pushdown", debajo del reproductor cuando
+      // hay sitio: el div con el alto (90 px) es el padre de sus iframes
+      'div:has(> div > iframe[class*="stream-display-ad__iframe_pushdown"])'
     ],
     anuncios: [
       // Anuncio grande de la portada, detrás del carrusel de directos
@@ -91,6 +97,13 @@
 
   // CSS que no es ocultar
   const REGLAS = {
+    // Tras una pausa publicitaria Twitch encoge el vídeo para poner un banner
+    // al lado o debajo: le pone a .video-ref la clase
+    // video-player--stream-display-ad_<formato> (lower-third, squeezeback,
+    // left-third…) y un alto o ancho en línea menor del 100 %. Se fuerza el
+    // tamaño completo; el resto de su CSS (centrado) ya encaja con él
+    anunciosDirecto: `
+      [class*="video-player--stream-display-ad_"] { width: 100% !important; height: 100% !important; }`,
     // "Suscríbete / Renovar suscripción: ¡hasta un 30 % de descuento!" -> "Suscribirse".
     // El texto original se encoge a 0 y se pinta el nuevo con ::after
     textoSuscribirse: `
@@ -109,10 +122,15 @@
   // Se copia con captureStream() en un <video> propio en vez de mover el de
   // Twitch: la columna del chat no deja sacarlo de su sitio y Twitch le fuerza
   // el volumen. Si no hay directo en pequeño, el anuncio solo se tapa y silencia.
+  // En los vídeos guardados (y a veces en directo) el anuncio no va en el stream
+  // sino en un <video> aparte encima del principal: ese se silencia, se oculta y
+  // se acelera hasta que acaba (probado: 30 s de anuncio pasan en unos 2 s).
   // Se revisa con un intervalo (no con requestAnimationFrame) para que también
   // funcione con la pestaña en segundo plano, que es cuando más molesta el audio.
 
   const ID_CAPA = 'bloqueador-pausa';
+  // El <video> del contenido; los de anuncios aparte van más adentro
+  const SELECTOR_PRINCIPAL = '.persistent-player [data-a-target="video-ref"] > video';
   let pausa = null; // { principal, capa, video, origen, mutedPrevio }
 
   function crearCapa() {
@@ -123,12 +141,13 @@
       display: 'grid', placeItems: 'center',
       color: '#adadb8', font: '14px system-ui, sans-serif'
     });
-    capa.textContent = 'Anuncio en curso · el directo vuelve en cuanto acabe';
+    const que = location.pathname.startsWith('/videos/') ? 'el vídeo' : 'el directo';
+    capa.textContent = `Anuncio en curso · ${que} vuelve en cuanto acabe`;
     return capa;
   }
 
   function iniciarPausa() {
-    const principal = document.querySelector('.persistent-player video');
+    const principal = document.querySelector(SELECTOR_PRINCIPAL);
     if (!principal) return;
     const capa = crearCapa();
     // Justo detrás del <video>: los controles y la cuenta atrás del anuncio,
@@ -137,6 +156,7 @@
     pausa = { principal, capa, video: null, origen: null, mutedPrevio: principal.muted };
     principal.muted = true;
     conectarDirecto();
+    acelerarAnuncios();
   }
 
   // El directo en pequeño puede aparecer después que la etiqueta de anuncio,
@@ -167,6 +187,18 @@
     pausa.principal.muted = true;
     if (pausa.video) pausa.video.volume = pausa.principal.volume;
     conectarDirecto();
+    acelerarAnuncios();
+  }
+
+  // Los <video> de anuncio aparte. Twitch puede reutilizarlos para el siguiente
+  // anuncio del bloque, así que se reaplica en cada revisión
+  function acelerarAnuncios() {
+    for (const video of document.querySelectorAll('.persistent-player video')) {
+      if (video === pausa.principal || video === pausa.video) continue;
+      video.muted = true;
+      video.style.opacity = '0';
+      if (video.playbackRate !== 16) video.playbackRate = 16;
+    }
   }
 
   function terminarPausa() {
