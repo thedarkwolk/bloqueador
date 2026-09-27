@@ -152,9 +152,17 @@
         valor.textContent = formato.format(total);
         zona.append(valor);
       }
+      // Un segmento por sitio, apilados siempre en el mismo orden (X abajo)
       const barra = document.createElement('div');
       barra.className = `grafico-barra${total ? '' : ' vacia'}`;
-      barra.style.height = `${(total / maximo) * 78}px`;
+      for (const sitio of SITIOS) {
+        const cantidad = sumaSitio(valores, sitio);
+        if (!cantidad) continue;
+        const segmento = document.createElement('div');
+        segmento.className = `grafico-segmento serie-${sitio}`;
+        segmento.style.height = `${(cantidad / maximo) * 78}px`;
+        barra.append(segmento);
+      }
       zona.append(barra);
 
       const etiqueta = document.createElement('span');

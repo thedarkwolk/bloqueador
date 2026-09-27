@@ -365,20 +365,64 @@ body.pausado :is(#panel-twitter, #panel-youtube, #panel-twitch) :is(.grupo, .pan
   font-variant-numeric: tabular-nums;
 }
 
+/* Barra apilada: el primer segmento (X) abajo. El hueco de 2 px entre
+   segmentos deja ver el fondo de la tarjeta y los separa sin depender del color */
 .grafico-barra {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 2px;
   width: 100%;
   max-width: 24px;
-  min-height: 2px;
-  border-radius: 4px 4px 0 0;
-  background: var(--acento);
 }
 
 .grafico-barra.vacia {
+  height: 2px;
   background: var(--borde);
 }
 
-.grafico-zona:hover .grafico-barra:not(.vacia) {
-  background: color-mix(in srgb, var(--acento) 80%, var(--texto));
+.grafico-segmento {
+  min-height: 2px;
+}
+
+.grafico-segmento:last-child {
+  border-radius: 4px 4px 0 0;
+}
+
+.grafico-zona:hover .grafico-segmento {
+  filter: brightness(1.15);
+}
+
+/* Colores de marca de cada sitio (X usa el azul de Twitter: su negro se
+   confunde con el texto). Validados con daltonismo sobre claro y oscuro */
+.serie-twitter { background: #1d9bf0; }
+.serie-youtube { background: #ff0033; }
+.serie-twitch { background: #9146ff; }
+
+.seccion-fila {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.leyenda {
+  display: flex;
+  gap: 10px;
+  margin: 0 4px 6px;
+  color: var(--texto-suave);
+  font-size: 11px;
+}
+
+.leyenda span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.leyenda i {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
 }
 
 .grafico-etiqueta {
