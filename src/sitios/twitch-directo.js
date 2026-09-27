@@ -34,10 +34,16 @@
         <div class="titulo"></div>
       </div>
       <div class="hueco"></div>`;
-    // El enlace del juego es de React (navega sin recargar): se reenvía el clic
-    barra.querySelector('.juego').addEventListener('click', () => {
-      document.querySelector('#live-channel-stream-information [data-a-target="stream-game-link"]')?.click();
-    });
+    // Los enlaces del bloque original son de React (navegan sin recargar): se
+    // les reenvía el clic
+    const reenviar = (clase, selector) => {
+      barra.querySelector(clase).addEventListener('click', () => {
+        document.querySelector(`#live-channel-stream-information ${selector}`)?.click();
+      });
+    };
+    reenviar('.juego', '[data-a-target="stream-game-link"]');
+    reenviar('.nombre', 'a:has(h1)');
+    reenviar('img', 'a:has(img)');
     return barra;
   }
 

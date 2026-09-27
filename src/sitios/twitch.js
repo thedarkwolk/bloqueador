@@ -181,8 +181,9 @@
       #bloqueador-directo .fila { display: flex; align-items: baseline; gap: 6px; white-space: nowrap; }
       #bloqueador-directo .nombre { font-size: 14px; font-weight: 700; }
       #bloqueador-directo .sep { color: #adadb8; }
-      #bloqueador-directo .juego { color: #bf94ff; cursor: pointer; }
-      #bloqueador-directo .juego:hover { text-decoration: underline; }
+      #bloqueador-directo :is(img, .nombre, .juego) { cursor: pointer; }
+      #bloqueador-directo .juego { color: #bf94ff; }
+      #bloqueador-directo :is(.nombre, .juego):hover { text-decoration: underline; }
       #bloqueador-directo .titulo { color: #dedee3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       #bloqueador-directo :is(.espectadores, .tiempo) { margin-left: 4px; font-size: 11px; color: #adadb8; }
       #bloqueador-directo .espectadores { color: #ff8280; font-weight: 600; }
