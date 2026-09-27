@@ -53,7 +53,10 @@
   function revisar() {
     const info = document.querySelector('#live-channel-stream-information');
     const columna = document.querySelector('.top-nav__menu > div:has([data-a-target="nav-search-box"])');
-    if (!activa() || !info || !columna) return quitar();
+    // En modo cine no hay barra superior y Twitch ya pone su propia cabecera
+    // encima del vídeo: los botones fijados quedarían flotando sobre él
+    const cine = document.querySelector('.channel-page__video-player--theatre-mode');
+    if (!activa() || !info || !columna || cine) return quitar();
 
     let barra = document.getElementById(ID);
     if (!barra) barra = crear();

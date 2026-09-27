@@ -151,6 +151,10 @@
       .top-nav__search-container { flex: 0 0 220px !important; }
       .top-nav__search-container input:not(:focus) { box-shadow: inset 0 0 0 1px #3a3a3d !important; }
       html[data-bloqueador-directo] .top-nav__search-container { display: none !important; }
+      /* Twitch limita el reproductor a calc(100vh - 16rem) para dejar sitio al
+         bloque de información (en línea, en estos tres): ya solo hay que
+         descontar la barra superior (5rem) */
+      html[data-bloqueador-directo] :is(.channel-page__video-player, .persistent-player, .video-player__container) { max-height: calc(100vh - 5rem) !important; }
       html[data-bloqueador-directo] :is(.twilight-main, .root-scrollable, .channel-root__info) { z-index: auto !important; }
       html[data-bloqueador-directo] #live-channel-stream-information {
         visibility: hidden; height: 0 !important; min-height: 0 !important;
