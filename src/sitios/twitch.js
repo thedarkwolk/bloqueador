@@ -61,7 +61,9 @@
       '[data-a-target="bits-button"]',
       // Saldo de Bits bajo el chat (icono + número); los puntos del canal se quedan
       '[data-test-selector="bits-balance-string"]',
-      'div:has(+ [data-test-selector="bits-balance-string"])'
+      'div:has(+ [data-test-selector="bits-balance-string"])',
+      // Punto rosa de "novedad" sobre ese mismo botón (ofertas de Bits)
+      '[data-test-selector="community-points-summary"] [class*="ScNewItemIndicator"]'
     ],
     regalos: [
       // "Regalo: suscripciones extra", junto al botón de suscribirse
@@ -241,6 +243,17 @@
   // El <video> del contenido; los de anuncios aparte van más adentro
   const SELECTOR_PRINCIPAL = '.persistent-player [data-a-target="video-ref"] > video';
   let pausa = null; // { principal, capa, video, origen, mutedPrevio }
+  // Si Twitch cambia el <video> principal a mitad de pausa, la nueva pausa
+  // hereda el sonido de antes del anuncio (el nuevo ya lo hemos silenciado)
+  let mutedHuerfano = null;
+
+  // El reproductor de Twitch escucha los volumechange del <video> y se queda
+  // con el estado: si ve que lo silenciamos, al acabar el anuncio (o al cambiar
+  // de <video>) vuelve a ponerlo en silencio y el directo sigue sin audio.
+  // Mientras dura la pausa no le llegan (en captura, antes que al <video>)
+  addEventListener('volumechange', (evento) => {
+    if (pausa && evento.target === pausa.principal) evento.stopImmediatePropagation();
+  }, true);
 
   function crearCapa() {
     const capa = document.createElement('div');
@@ -262,7 +275,9 @@
     // Justo detrás del <video>: los controles y la cuenta atrás del anuncio,
     // que van después, siguen quedando por encima
     principal.after(capa);
-    pausa = { principal, capa, video: null, origen: null, mutedPrevio: principal.muted };
+    const mutedPrevio = mutedHuerfano ?? principal.muted;
+    mutedHuerfano = null;
+    pausa = { principal, capa, video: null, origen: null, mutedPrevio };
     principal.muted = true;
     conectarDirecto();
     acelerarAnuncios();
@@ -300,10 +315,12 @@
   }
 
   // Los <video> de anuncio aparte. Twitch puede reutilizarlos para el siguiente
-  // anuncio del bloque, así que se reaplica en cada revisión
+  // anuncio del bloque, así que se reaplica en cada revisión. Se salta cualquier
+  // <video> principal, no solo el del inicio: si Twitch lo cambia a mitad de
+  // pausa, el nuevo no es un anuncio
   function acelerarAnuncios() {
     for (const video of document.querySelectorAll('.persistent-player video')) {
-      if (video === pausa.principal || video === pausa.video) continue;
+      if (video.matches(SELECTOR_PRINCIPAL) || video === pausa.video || video === pausa.origen) continue;
       video.muted = true;
       video.style.opacity = '0';
       if (video.playbackRate !== 16) video.playbackRate = 16;
@@ -321,7 +338,14 @@
     const opcion = ajustes().activo && ajustes().twitch.anunciosDirecto;
     const enAnuncio = opcion && !!document.querySelector('[data-a-target="video-ad-label"]');
     // Si Twitch sustituye el reproductor (p. ej. al cambiar de canal), la pausa queda huérfana
-    if (pausa && !pausa.principal.isConnected) { pausa.capa.remove(); pausa = null; }
+    if (pausa && !pausa.principal.isConnected) {
+      mutedHuerfano = pausa.mutedPrevio;
+      pausa.capa.remove();
+      pausa = null;
+    }
+    // Pausa huérfana que ya no sigue (se ha cambiado de canal): el <video>
+    // nuevo no lo hemos tocado, no hay nada que heredar
+    if (!enAnuncio) mutedHuerfano = null;
     if (enAnuncio && !pausa) iniciarPausa();
     else if (!enAnuncio && pausa) terminarPausa();
     else if (pausa) mantenerPausa();
