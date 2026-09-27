@@ -25,7 +25,7 @@ Todo se activa y desactiva al momento desde el popup de la extensión, sin recar
 |---|---|
 | 🚫 **Anuncios** | Tuits promocionados del timeline, respuestas y búsquedas, y la tendencia promocionada de «Qué está pasando» |
 | 🧹 **Interfaz limpia** | Fuera Premium, Grok (menú, botón flotante e icono de cada tuit), Estudio para creadores, «A quién seguir» y el pie de página |
-| ⭐ **Tus favoritos** | Recuadro en la columna derecha con el último tuit de las cuentas que elijas |
+| ⭐ **Tus favoritos** | Recuadro en la columna derecha con el último tuit de las cuentas que elijas, filtrando por todo, posts, respuestas o retuits |
 | 📂 **«Qué está pasando» desplegable** | Pulsa el título para plegar o desplegar las tendencias |
 | ⬇️ **Descargar vídeos** | Botón de descarga en los tuits con vídeo, en la mejor calidad disponible |
 | 🔗 **Estadísticas arriba y copiar enlace** | Las visualizaciones pasan a la cabecera del tuit y en su hueco aparece un botón para copiar el enlace |
@@ -67,7 +67,7 @@ La extensión no está en la Chrome Web Store: se instala a mano en un momento.
 
 Pulsa el icono de Bloqueador para abrir el popup: a la izquierda eliges el sitio y a la derecha activas o desactivas cada opción. El interruptor de arriba pausa la extensión entera.
 
-**Tus favoritos (X):** pulsa el icono de añadir junto al título del recuadro, escribe `@usuario` (o pega el enlace del perfil) y pulsa Intro. Con el campo abierto aparece una ✕ en cada cuenta para quitarla. Se actualiza solo cada 5 minutos.
+**Tus favoritos (X):** pulsa el icono de añadir junto al título del recuadro, escribe `@usuario` (o pega el enlace del perfil) y pulsa Intro. Con el campo abierto aparece una ✕ en cada cuenta para quitarla. Los botones **Todo · Posts · Respuestas · Retuits** eligen qué tuit de cada cuenta se muestra. Se actualiza solo cada 5 minutos.
 
 **Modo revisión:** en el panel *Info* del popup. Lo bloqueado se marca en rojo en vez de ocultarse, para comprobar que no se esconde nada que no debería.
 

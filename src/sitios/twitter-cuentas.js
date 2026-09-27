@@ -19,7 +19,18 @@
   const CLAVE_CACHE = 'cuentasInteresCache';
   // Cada cuánto se vuelve a pedir el último tuit de una cuenta
   const REFRESCO = 5 * 60 * 1000;
-  const CONSULTAS = ['UserByScreenName', 'UserTweets'];
+  // Tras un error se reintenta antes
+  const REINTENTO = 60 * 1000;
+  const CONSULTAS = ['UserByScreenName', 'UserTweets', 'UserTweetsAndReplies'];
+  // Qué tuit se muestra de cada cuenta (se guarda en chrome.storage.sync)
+  const CLAVE_FILTRO = 'cuentasInteresFiltro';
+  const FILTROS = { todo: 'Todo', post: 'Posts', respuesta: 'Respuestas', retuit: 'Retuits' };
+  const SIN_TWEETS = {
+    todo: 'Sin tuits recientes',
+    post: 'Sin posts recientes',
+    respuesta: 'Sin respuestas recientes',
+    retuit: 'Sin retuits recientes'
+  };
   const FORMATO_USUARIO = /^[A-Za-z0-9_]{1,15}$/;
 
   // Colores de X según su tema, que se reconoce por el fondo del <body>
@@ -66,7 +77,16 @@
     .bloqueador-cuentas:not(.bc-editando) .bc-quitar { display: none; }
     .bc-quitar:hover, .bc-quitar:focus-visible { background: rgba(244, 33, 46, 0.1); color: rgb(244, 33, 46); }
     .bc-quitar svg { width: 16px; height: 16px; fill: currentColor; }
-    .bc-rt { color: var(--bc-suave); font-size: 13px; }
+    .bc-contexto { color: var(--bc-suave); font-size: 13px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+    .bc-filtros { display: flex; flex-wrap: wrap; gap: 6px; padding: 0 16px 12px; }
+    .bc-filtros[hidden] { display: none; }
+    .bc-filtros button {
+      all: unset; padding: 4px 10px; border: 1px solid var(--bc-borde); border-radius: 9999px;
+      font-size: 14px; line-height: 18px; font-weight: 600; color: var(--bc-suave); cursor: pointer;
+      transition: background-color 0.2s, color 0.2s;
+    }
+    .bc-filtros button:hover, .bc-filtros button:focus-visible { background: var(--bc-hover); color: var(--bc-texto); }
+    .bc-filtros button[aria-checked="true"] { background: var(--bc-texto); border-color: var(--bc-texto); color: var(--bc-fondo); }
     .bc-texto {
       margin: 2px 0 0; white-space: pre-line; overflow-wrap: anywhere;
       display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; overflow: hidden;
@@ -90,6 +110,7 @@
   let cuentas = [];  // nombres de usuario, en el orden en que se añadieron
   let cache = {};    // usuario en minúsculas -> { perfil, tweet, error, actualizado }
   let api = null;    // promesa de { bearer, ids }
+  let filtro = 'todo';
   let actualizando = false;
   let repetir = false;
   let pendiente = false;
@@ -140,8 +161,16 @@
         'x-twitter-active-user': 'yes'
       }
     });
-    if (!respuesta.ok) throw new Error(`${nombre}: HTTP ${respuesta.status}`);
-    return respuesta.json();
+    if (!respuesta.ok) {
+      const detalle = (await respuesta.text().catch(() => '')).slice(0, 300);
+      throw new Error(`${nombre}: HTTP ${respuesta.status} ${detalle}`);
+    }
+    const datos = await respuesta.json();
+    // GraphQL puede responder 200 con errores y sin datos
+    if (!datos.data && datos.errors?.length) {
+      throw new Error(`${nombre}: ${datos.errors.map((e) => e.message).join('; ').slice(0, 300)}`);
+    }
+    return datos;
   }
 
   async function buscarPerfil(usuario) {
@@ -176,37 +205,63 @@
     return texto;
   }
 
+  const tipoDe = (nodo) => nodo.legacy.retweeted_status_result ? 'retuit'
+    : nodo.legacy.in_reply_to_status_id_str ? 'respuesta'
+      : 'post';
+
+  function resumir(nodo, tipo) {
+    const original = desenvolver(nodo.legacy.retweeted_status_result?.result);
+    const tweet = original?.legacy ? original : nodo;
+    return {
+      id: tweet.legacy.id_str,
+      autor: autorDe(tweet) ?? '',
+      tipo,
+      respondeA: nodo.legacy.in_reply_to_screen_name ?? '',
+      texto: textoDe(tweet),
+      fecha: Date.parse(nodo.legacy.created_at)
+    };
+  }
+
   /**
-   * Último tuit de la cuenta (incluidos retuits, sin respuestas). Se ignora el
+   * Último post, respuesta y retuit de la cuenta. UserTweets trae posts y
+   * retuits; UserTweetsAndReplies añade las respuestas (con los tuits a los
+   * que responden, que se descartan por ser de otras cuentas). Se ignora el
    * tuit fijado, que va en su propia instrucción (TimelinePinEntry), y se
-   * elige el id más alto porque los hilos vienen agrupados.
+   * elige el id más alto de cada tipo porque los hilos vienen agrupados.
    */
-  async function buscarUltimoTweet(idUsuario) {
-    const datos = await consultar('UserTweets', {
-      userId: idUsuario, count: 10, includePromotedContent: false, withVoice: true
-    });
-    const instrucciones = datos.data?.user?.result?.timeline?.timeline?.instructions ?? [];
-    let ultimo = null;
+  async function buscarUltimos(idUsuario) {
+    // Las mismas variables que manda X en cada consulta: una de más puede
+    // hacer que la rechace (withCommunity solo existe en UserTweetsAndReplies)
+    const variables = { userId: idUsuario, count: 20, includePromotedContent: false, withVoice: true };
+    // Si falla una de las dos, se sigue con la otra
+    const resultados = await Promise.allSettled([
+      consultar('UserTweets', variables),
+      consultar('UserTweetsAndReplies', { ...variables, withCommunity: true })
+    ]);
+    const fallos = resultados.filter((r) => r.status === 'rejected').map((r) => r.reason);
+    fallos.forEach((error) => log(`Error al pedir tuits de ${idUsuario}:`, error.message));
+    if (fallos.length === resultados.length) throw fallos[0];
+    const respuestas = resultados.filter((r) => r.status === 'fulfilled').map((r) => r.value);
+    const ultimos = {};
     (function recorrer(nodo) {
       if (!nodo || typeof nodo !== 'object') return;
       if (Array.isArray(nodo)) return nodo.forEach(recorrer);
       const id = nodo.legacy?.id_str;
-      if (id && nodo.legacy.user_id_str === idUsuario && (!ultimo || BigInt(id) > BigInt(ultimo.legacy.id_str))) {
-        ultimo = nodo;
+      if (id && nodo.legacy.user_id_str === idUsuario) {
+        const tipo = tipoDe(nodo);
+        if (!ultimos[tipo] || BigInt(id) > BigInt(ultimos[tipo].legacy.id_str)) ultimos[tipo] = nodo;
       }
       Object.values(nodo).forEach(recorrer);
-    })(instrucciones.filter((i) => i.type === 'TimelineAddEntries'));
-    if (!ultimo) return null;
+    })(respuestas.flatMap((datos) => datos.data?.user?.result?.timeline?.timeline?.instructions ?? [])
+      .filter((i) => i.type === 'TimelineAddEntries'));
 
-    const original = desenvolver(ultimo.legacy.retweeted_status_result?.result);
-    const tweet = original?.legacy ? original : ultimo;
-    return {
-      id: tweet.legacy.id_str,
-      autor: autorDe(tweet) ?? '',
-      retuit: tweet !== ultimo,
-      texto: textoDe(tweet),
-      fecha: Date.parse(ultimo.legacy.created_at)
-    };
+    return Object.fromEntries(Object.entries(ultimos).map(([tipo, nodo]) => [tipo, resumir(nodo, tipo)]));
+  }
+
+  // El más reciente de los tipos que pide el filtro
+  function elegir(tweets = {}, filtro) {
+    const candidatos = filtro === 'todo' ? Object.values(tweets) : [tweets[filtro]];
+    return candidatos.filter(Boolean).sort((a, b) => b.fecha - a.fecha)[0] ?? null;
   }
 
   // ---- Datos ----
@@ -225,7 +280,7 @@
     try {
       const perfil = previo?.perfil ?? await buscarPerfil(usuario);
       if (!perfil) return { error: 'La cuenta no existe', actualizado: Date.now() };
-      return { perfil, tweet: await buscarUltimoTweet(perfil.id), actualizado: Date.now() };
+      return { perfil, tweets: await buscarUltimos(perfil.id), actualizado: Date.now() };
     } catch (error) {
       log(`No se ha podido actualizar @${usuario}:`, error.message);
       // Se guarda la hora para no reintentar hasta el siguiente refresco
@@ -247,7 +302,10 @@
     try {
       for (const usuario of cuentas) {
         const previo = cache[clave(usuario)];
-        if (previo && Date.now() - previo.actualizado < REFRESCO) continue;
+        // Lo guardado por versiones anteriores (sin `tweets`) se pide de nuevo
+        const espera = previo?.error ? REINTENTO : REFRESCO;
+        const alDia = previo && (previo.tweets || previo.error) && Date.now() - previo.actualizado < espera;
+        if (alDia) continue;
         const nuevo = await actualizarCuenta(usuario);
         if (!cuentas.includes(usuario)) continue; // se quitó mientras se pedía
         // Solo se guardan las cuentas que siguen en la lista
@@ -295,11 +353,28 @@
   entrada.placeholder = '@usuario y pulsa Intro';
   entrada.setAttribute('aria-label', 'Cuenta que añadir');
   formulario.append(entrada);
+  // Filtro: qué tuit de cada cuenta se muestra
+  const filtros = document.createElement('div');
+  filtros.className = 'bc-filtros';
+  filtros.setAttribute('role', 'radiogroup');
+  filtros.setAttribute('aria-label', 'Qué mostrar');
+  for (const [valor, texto] of Object.entries(FILTROS)) {
+    const boton = document.createElement('button');
+    boton.dataset.filtro = valor;
+    boton.setAttribute('role', 'radio');
+    boton.textContent = texto;
+    boton.addEventListener('click', () => {
+      filtro = valor;
+      pintar();
+      chrome.storage.sync.set({ [CLAVE_FILTRO]: valor });
+    });
+    filtros.append(boton);
+  }
   const lista = document.createElement('ul');
   const vacio = document.createElement('p');
   vacio.className = 'bc-vacio';
   vacio.textContent = 'Pulsa el icono de arriba para añadir cuentas y ver aquí su último tuit.';
-  caja.append(cabecera, formulario, lista, vacio);
+  caja.append(cabecera, formulario, filtros, lista, vacio);
 
   // Con el campo abierto se muestran también las "x" para quitar cuentas
   function mostrarFormulario(mostrar) {
@@ -374,7 +449,7 @@
   function crearElemento(usuario) {
     const datos = cache[clave(usuario)] ?? {};
     const perfil = datos.perfil ?? { usuario, nombre: usuario, avatar: '' };
-    const tweet = datos.tweet;
+    const tweet = elegir(datos.tweets, filtro);
     const rutaPerfil = `/${perfil.usuario}`;
 
     const elemento = document.createElement('li');
@@ -413,11 +488,14 @@
     cuerpo.className = 'bc-cuerpo';
     cuerpo.append(filaNombre);
     if (tweet) {
-      if (tweet.retuit) {
-        const rt = document.createElement('div');
-        rt.className = 'bc-rt';
-        rt.textContent = `Retuiteó a @${tweet.autor}`;
-        cuerpo.append(rt);
+      const contexto = tweet.tipo === 'retuit' ? `Retuiteó a @${tweet.autor}`
+        : tweet.tipo === 'respuesta' && tweet.respondeA ? `En respuesta a @${tweet.respondeA}`
+          : '';
+      if (contexto) {
+        const linea = document.createElement('div');
+        linea.className = 'bc-contexto';
+        linea.textContent = contexto;
+        cuerpo.append(linea);
       }
       const texto = document.createElement('p');
       texto.className = 'bc-texto';
@@ -426,7 +504,8 @@
     } else {
       const aviso = document.createElement('p');
       aviso.className = 'bc-aviso';
-      aviso.textContent = datos.error ?? (datos.actualizado ? 'Sin tuits visibles' : 'Cargando…');
+      // Sin `tweets` es que aún no se ha pedido (o viene de una versión anterior)
+      aviso.textContent = datos.error ?? (datos.tweets ? SIN_TWEETS[filtro] : 'Cargando…');
       cuerpo.append(aviso);
     }
 
@@ -446,6 +525,8 @@
   }
 
   function pintar() {
+    for (const boton of filtros.children) boton.setAttribute('aria-checked', String(boton.dataset.filtro === filtro));
+    filtros.hidden = cuentas.length === 0;
     lista.replaceChildren(...cuentas.map(crearElemento));
     vacio.hidden = cuentas.length > 0;
   }
@@ -496,6 +577,10 @@
       pintar();
       actualizarCaducadas();
     }
+    if (zona === 'sync' && cambios[CLAVE_FILTRO]) {
+      filtro = cambios[CLAVE_FILTRO].newValue ?? 'todo';
+      pintar();
+    }
     if (zona === 'local' && cambios[CLAVE_CACHE]) {
       cache = cambios[CLAVE_CACHE].newValue ?? {};
       pintar();
@@ -509,11 +594,12 @@
 
   Promise.all([
     BloqueadorAjustes.cargar(),
-    chrome.storage.sync.get(CLAVE_CUENTAS),
+    chrome.storage.sync.get([CLAVE_CUENTAS, CLAVE_FILTRO]),
     chrome.storage.local.get(CLAVE_CACHE)
-  ]).then(([guardados, datosCuentas, datosCache]) => {
+  ]).then(([guardados, datosSync, datosCache]) => {
     ajustes = guardados;
-    cuentas = datosCuentas[CLAVE_CUENTAS] ?? [];
+    cuentas = datosSync[CLAVE_CUENTAS] ?? [];
+    filtro = FILTROS[datosSync[CLAVE_FILTRO]] ? datosSync[CLAVE_FILTRO] : 'todo';
     cache = datosCache[CLAVE_CACHE] ?? {};
     pintar();
     programar();
