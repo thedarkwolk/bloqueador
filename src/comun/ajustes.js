@@ -19,8 +19,11 @@ globalThis.BloqueadorAjustes = (() => {
       grok: true,
       estudio: true,
       aQuienSeguir: true,
+      pieDePagina: true,
       reordenar: true,
-      descargarVideos: true
+      descargarVideos: true,
+      cuentasInteres: true,
+      tendenciasPlegables: true
     },
     youtube: {
       anunciosVideo: true,

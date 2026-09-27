@@ -25,7 +25,12 @@
   // Se evitan los textos y aria-label porque cambian según el idioma.
   const SELECTORES = {
     // Los tweets anuncio los marca el observer con ATTR_BLOQUEADO
-    anuncios: [`[${ATTR_BLOQUEADO}="anuncio"]`],
+    anuncios: [
+      `[${ATTR_BLOQUEADO}="anuncio"]`,
+      // Tendencia promocionada ("Qué está pasando" y Explorar): es la única
+      // con el icono de promocionado (el texto "Promoted by…" no se traduce)
+      'div:has(> div > [data-testid="trend"] svg path[d^="M19.498 3h-15c-1.381"])'
+    ],
     premium: [
       'header [role="navigation"] a[href="/i/premium_sign_up"]',
       // Tarjeta "Suscríbete a Premium" de la columna derecha.
@@ -43,7 +48,11 @@
     estudio: ['header [role="navigation"] a[href="/i/jf/creators/studio"]'],
     aQuienSeguir: [
       '[data-testid="sidebarColumn"] div:has(> div > aside a[href^="/i/connect_people"])'
-    ]
+    ],
+    // Pie de la columna derecha (Condiciones de Servicio, Privacidad, © X Corp…).
+    // Se reconoce por el enlace a las condiciones, que no depende del idioma.
+    // Se oculta el contenedor del <nav> para que no quede su margen
+    pieDePagina: ['[data-testid="sidebarColumn"] div:has(> nav a[href$="/tos"])']
   };
 
   const ajustes = BloqueadorOcultar.iniciar('twitter', SELECTORES);
