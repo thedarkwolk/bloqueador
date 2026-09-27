@@ -61,6 +61,11 @@ h2 {
 
 .interruptor,
 .opcion {
+  /* Contiene al checkbox (position: absolute). Sin esto se coloca respecto a
+     la página y no hace scroll con el panel: en los paneles largos (Twitch)
+     queda por debajo del popup, y al recibir el foco el navegador desplaza
+     todo el popup para enseñarlo y el panel se queda en blanco */
+  position: relative;
   display: flex;
   align-items: center;
   gap: 8px;
