@@ -3,7 +3,8 @@
  * Oculta elementos publicitarios y promocionales de la interfaz: anuncios de
  * portada y del chat, banners patrocinados, Turbo, Prime, Bits, regalos,
  * mayores donantes, avisos del chat, contadores de avisos, campana del canal,
- * historias y rachas.
+ * historias y rachas. En la barra izquierda deja solo los canales seguidos en
+ * directo, todos (ver twitch-seguidos.js), sin líneas extra y más ancha.
  * Qué se oculta lo decide el popup (ver src/comun/ajustes.js y ocultar.js).
  *
  * Los anuncios de vídeo del directo van insertados en el propio stream: esos
@@ -87,16 +88,51 @@
     ],
     historias: [
       // "Abrir historias" en la sección "Para ti" de la barra izquierda
-      '[class*="storiesLeftNavSection"]'
+      '[class*="storiesLeftNavSection"]',
+      // Con la barra plegada su contenedor, que aun vacío deja un hueco arriba
+      '#side-nav div:has([class*="storiesLeftNavSection"]):not(:has(.side-nav-section))'
     ],
     rachas: [
       // "¡Mantén tu racha!" con su "Mostrar más", en la barra izquierda
       '[role="group"]:has(> [class*="saveYourStreakSideNavRow"])'
+    ],
+    navegacion: [
+      // "Siguiendo" y "Explorar" (van en el mismo contenedor) y el menú de
+      // los tres puntos, junto al logo
+      '.top-nav__menu > div > div:has([data-a-target="following-link"])',
+      '.top-nav__menu > div > div:has([data-a-target="ellipsis-button"])'
+    ],
+    // Barra izquierda, abierta y plegada: la sección de seguidos es la única
+    // cuya cabecera lleva .followed-side-nav-header (el resto usa .side-nav-header)
+    soloSeguidos: [
+      // "Canales en directo", "Categorías recomendadas" y, en un canal,
+      // "Los espectadores de X también ven"
+      '#side-nav .side-nav-section:not(:has(.followed-side-nav-header))',
+      // Con la barra plegada, el corazón que separa los seguidos de las otras
+      // secciones: sin ellas sobra
+      '#side-nav .followed-side-nav-header[data-a-target="side-nav-header-collapsed"]'
+    ],
+    todosSeguidos: [
+      // Los seguidos en directo se despliegan solos (twitch-seguidos.js); los
+      // desconectados que Twitch pone detrás y "Mostrar más/menos" sobran
+      '#side-nav .side-nav-card:has(.side-nav-card__avatar--offline)',
+      '#side-nav .side-nav-section:has(.followed-side-nav-header) div:has(> button[data-a-target^="side-nav-show-"])'
+    ],
+    tarjetasLimpias: [
+      // Tercera línea de algunos canales ("Racha de visualizaciones", eventos…):
+      // el hermano del bloque con el nombre, el juego y los espectadores
+      '#side-nav div:has(> [data-a-target="side-nav-card-metadata"]) ~ div'
     ]
   };
 
   // CSS que no es ocultar
   const REGLAS = {
+    // Sin "Siguiendo", "Explorar" ni el menú, el buscador pasa junto al logo:
+    // la barra superior son tres columnas flexibles; la del logo deja de
+    // crecer (tiene width: 100 %) y la del buscador deja de centrarlo
+    navegacion: `
+      .top-nav__menu > div:has([data-a-target="home-link"]) { flex: 0 0 auto !important; width: auto !important; }
+      .top-nav__menu > div:has([data-a-target="nav-search-box"]) { justify-content: flex-start !important; }`,
     // Tras una pausa publicitaria Twitch encoge el vídeo para poner un banner
     // al lado o debajo: le pone a .video-ref la clase
     // video-player--stream-display-ad_<formato> (lower-third, squeezeback,
@@ -108,10 +144,21 @@
     // El texto original se encoge a 0 y se pinta el nuevo con ::after
     textoSuscribirse: `
       [data-a-target="subscribe-button"] [data-a-target="tw-core-button-label-text"] { font-size: 0 !important; }
-      [data-a-target="subscribe-button"] [data-a-target="tw-core-button-label-text"]::after { content: "Suscribirse"; font-size: 14px; }`
+      [data-a-target="subscribe-button"] [data-a-target="tw-core-button-label-text"]::after { content: "Suscribirse"; font-size: 14px; }`,
+    // La barra izquierda abierta mide 240 px y corta el juego ("League of Le…").
+    // Lo de dentro y el contenido de la página se ajustan solos a este ancho
+    barraAncha: `
+      .side-nav--expanded { width: 280px !important; }`
   };
 
   const ajustes = BloqueadorOcultar.iniciar('twitch', SELECTORES, REGLAS);
+
+  // twitch-seguidos.js corre en el mundo de la página y no ve los ajustes:
+  // se le avisa con un atributo en <html>
+  setInterval(() => {
+    const opcion = ajustes().activo && ajustes().twitch.todosSeguidos;
+    document.documentElement.toggleAttribute('data-bloqueador-seguidos', opcion);
+  }, 1000);
 
   // --- Anuncios en directo ---------------------------------------------------
   // Durante una pausa publicitaria Twitch pone el anuncio en el reproductor

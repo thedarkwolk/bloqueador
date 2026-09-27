@@ -42,6 +42,12 @@
       "matches": ["https://www.twitch.tv/*"],
       "js": ["src/comun/ajustes.js", "src/comun/ocultar.js", "src/sitios/twitch.js"],
       "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.twitch.tv/*"],
+      "js": ["src/sitios/twitch-seguidos.js"],
+      "run_at": "document_idle",
+      "world": "MAIN"
     }
   ]
 }

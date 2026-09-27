@@ -44,7 +44,12 @@ globalThis.BloqueadorAjustes = (() => {
       contadores: true,
       campana: true,
       historias: true,
-      rachas: true
+      rachas: true,
+      navegacion: true,
+      soloSeguidos: true,
+      todosSeguidos: true,
+      tarjetasLimpias: true,
+      barraAncha: true
     }
   };
 
