@@ -56,6 +56,9 @@
   };
 
   const ajustes = BloqueadorOcultar.iniciar('twitter', SELECTORES);
+  const opcionAnuncios = () => ajustes().activo && ajustes().twitter.anuncios;
+  // La tendencia promocionada solo la oculta la hoja de estilos
+  BloqueadorEstadisticas.vigilar('twitter', 'tendencias', SELECTORES.anuncios[1], opcionAnuncios);
   // IDs de anuncios ya vistos, para no contar dos veces el mismo al hacer scroll
   const anunciosVistos = new Set();
   let pendiente = false;
@@ -107,6 +110,7 @@
     if (anunciosVistos.has(id)) return;
     anunciosVistos.add(id);
     log(`Anuncio detectado (distintos: ${anunciosVistos.size})`, id);
+    if (opcionAnuncios()) BloqueadorEstadisticas.sumar('twitter', 'anuncios');
   }
 
   function revisar() {

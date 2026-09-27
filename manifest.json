@@ -9,7 +9,7 @@
     "48": "icons/icon48.png",
     "128": "icons/icon128.png"
   },
-  "permissions": ["storage", "downloads"],
+  "permissions": ["storage", "downloads", "activeTab"],
   "background": {
     "service_worker": "src/fondo.js"
   },
@@ -30,12 +30,12 @@
     },
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["src/comun/ajustes.js", "src/comun/ocultar.js", "src/sitios/twitter.js", "src/sitios/twitter-acciones.js", "src/sitios/twitter-cuentas.js", "src/sitios/twitter-tendencias.js"],
+      "js": ["src/comun/ajustes.js", "src/comun/ocultar.js", "src/comun/estadisticas.js", "src/sitios/twitter.js", "src/sitios/twitter-acciones.js", "src/sitios/twitter-cuentas.js", "src/sitios/twitter-tendencias.js"],
       "run_at": "document_idle"
     },
     {
       "matches": ["https://www.youtube.com/*"],
-      "js": ["src/comun/ajustes.js", "src/comun/ocultar.js", "src/sitios/youtube.js"],
+      "js": ["src/comun/ajustes.js", "src/comun/ocultar.js", "src/comun/estadisticas.js", "src/sitios/youtube.js"],
       "run_at": "document_idle"
     },
     {
@@ -46,7 +46,7 @@
     },
     {
       "matches": ["https://www.twitch.tv/*"],
-      "js": ["src/comun/ajustes.js", "src/comun/ocultar.js", "src/sitios/twitch.js", "src/sitios/twitch-directo.js"],
+      "js": ["src/comun/ajustes.js", "src/comun/ocultar.js", "src/comun/estadisticas.js", "src/sitios/twitch.js", "src/sitios/twitch-directo.js"],
       "run_at": "document_idle"
     },
     {

@@ -210,6 +210,13 @@
   };
 
   const ajustes = BloqueadorOcultar.iniciar('twitch', SELECTORES, REGLAS);
+  // Lo que solo oculta la hoja de estilos: anuncios de la página y banners
+  // que encogen el directo
+  const opcionTwitch = (clave) => () => ajustes().activo && ajustes().twitch[clave];
+  BloqueadorEstadisticas.vigilar('twitch', 'pagina', SELECTORES.anuncios.join(', '), opcionTwitch('anuncios'));
+  // (el sda-wrapper puede estar vacío; la clase del reproductor encogido no)
+  BloqueadorEstadisticas.vigilar('twitch', 'banners',
+    `.video-ref[class*="video-player--stream-display-ad_"], ${SELECTORES.anunciosDirecto[2]}`, opcionTwitch('anunciosDirecto'));
 
   // --- Puntos del canal ------------------------------------------------------
   // Cada ~15 min de directo aparece junto al saldo de puntos, bajo el chat, un
@@ -282,6 +289,8 @@
     // Justo detrás del <video>: los controles y la cuenta atrás del anuncio,
     // que van después, siguen quedando por encima
     principal.after(capa);
+    // Una pausa huérfana que sigue en el reproductor nuevo ya se contó
+    if (mutedHuerfano === null) BloqueadorEstadisticas.sumar('twitch', 'directo');
     const mutedPrevio = mutedHuerfano ?? principal.muted;
     mutedHuerfano = null;
     pausa = { principal, capa, video: null, origen: null, mutedPrevio };

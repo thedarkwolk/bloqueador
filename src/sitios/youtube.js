@@ -59,6 +59,8 @@
 
   const ajustes = BloqueadorOcultar.iniciar('youtube', SELECTORES, REGLAS);
   const opcion = (clave) => ajustes().activo && ajustes().youtube[clave];
+  // Los anuncios de la página solo los oculta la hoja de estilos
+  BloqueadorEstadisticas.vigilar('youtube', 'pagina', 'ytd-ad-slot-renderer, #masthead-ad:has(*)', () => opcion('anuncios'));
 
   // --- Anuncios de vídeo -----------------------------------------------------
   // Durante un anuncio el reproductor (#movie_player) lleva la clase
@@ -79,7 +81,10 @@
     if (!video) return;
 
     if (opcion('anunciosVideo') && jugador.classList.contains('ad-showing')) {
-      if (!previo) previo = { muted: video.muted, velocidad: video.playbackRate };
+      if (!previo) {
+        previo = { muted: video.muted, velocidad: video.playbackRate };
+        BloqueadorEstadisticas.sumar('youtube', 'video');
+      }
       // Solo si cambia: estas asignaciones disparan los eventos que escuchamos
       if (!video.muted) video.muted = true;
       if (video.playbackRate !== VELOCIDAD_ANUNCIO) video.playbackRate = VELOCIDAD_ANUNCIO;
@@ -107,6 +112,7 @@
   // la vez. Se reintenta como mucho una vez por segundo por si el botón aún no
   // estaba listo.
   let ultimoIntento = 0;
+  const shortsSaltados = new WeakSet(); // para contar cada anuncio una vez
 
   function saltarShortAnuncio() {
     if (!opcion('shorts') || !location.pathname.startsWith('/shorts/')) return;
@@ -117,6 +123,10 @@
     });
     if (!anuncio || Date.now() - ultimoIntento < 1000) return;
     ultimoIntento = Date.now();
+    if (!shortsSaltados.has(anuncio)) {
+      shortsSaltados.add(anuncio);
+      BloqueadorEstadisticas.sumar('youtube', 'shorts');
+    }
     document.querySelector('#navigation-button-down button')?.click();
   }
 

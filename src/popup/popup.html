@@ -19,17 +19,25 @@
   <div class="cuerpo">
     <!-- Iconos: Phosphor Icons v2.1.1 (https://phosphoricons.com), licencia MIT -->
     <nav class="lista" role="tablist" aria-label="Aplicaciones">
-      <button class="lista-item" role="tab" data-panel="twitter" aria-selected="true">
+      <button class="lista-item" role="tab" data-panel="resumen" aria-selected="true">
+        <svg class="lista-icono icono-resumen" aria-hidden="true" viewBox="0 0 256 256" fill="currentColor"><rect x="36" y="128" width="44" height="88" rx="10"/><rect x="106" y="80" width="44" height="136" rx="10"/><rect x="176" y="36" width="44" height="180" rx="10"/></svg>
+        <span>Resumen</span>
+      </button>
+      <span class="lista-hueco"></span>
+      <button class="lista-item" role="tab" data-panel="twitter" aria-selected="false">
         <svg class="lista-icono icono-x" aria-hidden="true" viewBox="0 0 256 256" fill="currentColor"><path d="M214.75,211.71l-62.6-98.38,61.77-67.95a8,8,0,0,0-11.84-10.76L143.24,99.34,102.75,35.71A8,8,0,0,0,96,32H48a8,8,0,0,0-6.75,12.3l62.6,98.37-61.77,68a8,8,0,1,0,11.84,10.76l58.84-64.72,40.49,63.63A8,8,0,0,0,160,224h48a8,8,0,0,0,6.75-12.29ZM164.39,208,62.57,48h29L193.43,208Z"/></svg>
         <span>Twitter / X</span>
+        <span class="lista-contador" data-contador="twitter"></span>
       </button>
       <button class="lista-item" role="tab" data-panel="youtube" aria-selected="false">
         <svg class="lista-icono icono-youtube" aria-hidden="true" viewBox="0 0 256 256" fill="currentColor"><path d="M234.33,69.52a24,24,0,0,0-14.49-16.4C185.56,39.88,131,40,128,40s-57.56-.12-91.84,13.12a24,24,0,0,0-14.49,16.4C19.08,79.5,16,97.74,16,128s3.08,48.5,5.67,58.48a24,24,0,0,0,14.49,16.41C69,215.56,120.4,216,127.34,216h1.32c6.94,0,58.37-.44,91.18-13.11a24,24,0,0,0,14.49-16.41c2.59-10,5.67-28.22,5.67-58.48S236.92,79.5,234.33,69.52Zm-73.74,65-40,28A8,8,0,0,1,108,156V100a8,8,0,0,1,12.59-6.55l40,28a8,8,0,0,1,0,13.1Z"/></svg>
         <span>YouTube</span>
+        <span class="lista-contador" data-contador="youtube"></span>
       </button>
       <button class="lista-item" role="tab" data-panel="twitch" aria-selected="false">
         <svg class="lista-icono icono-twitch" aria-hidden="true" viewBox="0 0 256 256" fill="currentColor"><path d="M208,32H48A16,16,0,0,0,32,48V192a16,16,0,0,0,16,16H64v32a8,8,0,0,0,13.12,6.15L122.9,208h42.2a16,16,0,0,0,10.25-3.71l42.89-35.75A15.93,15.93,0,0,0,224,156.25V48A16,16,0,0,0,208,32ZM128,136a8,8,0,0,1-16,0V88a8,8,0,0,1,16,0Zm48,0a8,8,0,0,1-16,0V88a8,8,0,0,1,16,0Z"/></svg>
         <span>Twitch</span>
+        <span class="lista-contador" data-contador="twitch"></span>
       </button>
       <span class="lista-separador"></span>
       <button class="lista-item" role="tab" data-panel="info" aria-selected="false">
@@ -39,307 +47,377 @@
     </nav>
 
     <main class="paneles">
-      <section class="panel" id="panel-twitter" role="tabpanel">
-        <h2>Twitter / X</h2>
-        <p class="panel-subtitulo">Qué ocultar en x.com</p>
+      <section class="panel" id="panel-resumen" role="tabpanel">
+        <header class="panel-cabecera">
+          <div>
+            <h2>Resumen</h2>
+            <p class="panel-subtitulo" id="resumen-desde">Anuncios y promociones bloqueados</p>
+          </div>
+        </header>
 
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Anuncios</strong>
-            <small>Tweets promocionados del timeline, respuestas y búsquedas</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitter.anuncios">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Premium</strong>
-            <small>Enlace del menú y tarjeta «Suscríbete a Premium»</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitter.premium">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Grok</strong>
-            <small>Enlace del menú, botón flotante e icono en cada tweet</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitter.grok">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Estudio para creadores</strong>
-            <small>Enlace del menú izquierdo</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitter.estudio">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>A quién seguir</strong>
-            <small>Sugerencias de cuentas en la columna derecha</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitter.aQuienSeguir">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Pie de página</strong>
-            <small>Condiciones de servicio, privacidad, cookies… de la columna derecha</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitter.pieDePagina">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
+        <div class="cifras">
+          <div class="cifra"><span class="cifra-valor" id="cifra-hoy">0</span><span class="cifra-etiqueta">Hoy</span></div>
+          <div class="cifra"><span class="cifra-valor" id="cifra-semana">0</span><span class="cifra-etiqueta">7 días</span></div>
+          <div class="cifra"><span class="cifra-valor" id="cifra-total">0</span><span class="cifra-etiqueta">Total</span></div>
+        </div>
+
+        <h3 class="seccion">Últimos 7 días</h3>
+        <div class="grupo grafico" id="grafico" role="img"></div>
+
+        <h3 class="seccion">Por sitio</h3>
+        <div class="grupo" id="por-sitio"></div>
+
+        <button type="button" class="boton-texto" id="reiniciar">Reiniciar estadísticas</button>
+      </section>
+
+      <section class="panel" id="panel-twitter" role="tabpanel" hidden>
+        <header class="panel-cabecera">
+          <div>
+            <h2>Twitter / X</h2>
+            <p class="panel-subtitulo">Qué ocultar en x.com</p>
+          </div>
+          <label class="interruptor" title="Activar o desactivar todo Twitter / X">
+            <input type="checkbox" class="todo-sitio" data-sitio="twitter">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+        </header>
+
+        <h3 class="seccion">Ocultar</h3>
+        <div class="grupo">
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Anuncios</strong>
+              <small>Tweets promocionados del timeline, respuestas y búsquedas</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitter.anuncios">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Premium</strong>
+              <small>Enlace del menú y tarjeta «Suscríbete a Premium»</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitter.premium">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Grok</strong>
+              <small>Enlace del menú, botón flotante e icono en cada tweet</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitter.grok">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Estudio para creadores</strong>
+              <small>Enlace del menú izquierdo</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitter.estudio">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>A quién seguir</strong>
+              <small>Sugerencias de cuentas en la columna derecha</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitter.aQuienSeguir">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Pie de página</strong>
+              <small>Condiciones de servicio, privacidad, cookies… de la columna derecha</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitter.pieDePagina">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+        </div>
 
         <h3 class="seccion">Extras</h3>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Estadísticas arriba y copiar enlace</strong>
-            <small>Visualizaciones en la cabecera y botón para copiar el enlace del tweet</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitter.reordenar">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Descargar vídeos</strong>
-            <small>Botón de descarga en los tweets con vídeo, en la mejor calidad</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitter.descargarVideos">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Tus favoritos</strong>
-            <small>Recuadro en la columna derecha con el último tuit de las cuentas que añadas</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitter.cuentasInteres">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>«Qué está pasando» desplegable</strong>
-            <small>Pulsa su título para plegar o desplegar las tendencias</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitter.tendenciasPlegables">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
+        <div class="grupo">
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Estadísticas arriba y copiar enlace</strong>
+              <small>Visualizaciones en la cabecera y botón para copiar el enlace del tweet</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitter.reordenar">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Descargar vídeos</strong>
+              <small>Botón de descarga en los tweets con vídeo, en la mejor calidad</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitter.descargarVideos">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Tus favoritos</strong>
+              <small>Recuadro en la columna derecha con el último tuit de las cuentas que añadas</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitter.cuentasInteres">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>«Qué está pasando» desplegable</strong>
+              <small>Pulsa su título para plegar o desplegar las tendencias</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitter.tendenciasPlegables">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+        </div>
       </section>
 
       <section class="panel" id="panel-youtube" role="tabpanel" hidden>
-        <h2>YouTube</h2>
-        <p class="panel-subtitulo">Qué bloquear en youtube.com</p>
+        <header class="panel-cabecera">
+          <div>
+            <h2>YouTube</h2>
+            <p class="panel-subtitulo">Qué bloquear en youtube.com</p>
+          </div>
+          <label class="interruptor" title="Activar o desactivar todo YouTube">
+            <input type="checkbox" class="todo-sitio" data-sitio="youtube">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+        </header>
 
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Anuncios de vídeo</strong>
-            <small>Se saltan solos, antes y durante el vídeo</small>
-          </span>
-          <input type="checkbox" data-ajuste="youtube.anunciosVideo">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Anuncios en Shorts</strong>
-            <small>Pasa al Short siguiente cuando sale un anuncio</small>
-          </span>
-          <input type="checkbox" data-ajuste="youtube.shorts">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Anuncios de la página</strong>
-            <small>Portada, sugerencias, búsquedas y tarjetas patrocinadas</small>
-          </span>
-          <input type="checkbox" data-ajuste="youtube.anuncios">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Premium</strong>
-            <small>Banners y avisos para suscribirse a YouTube Premium</small>
-          </span>
-          <input type="checkbox" data-ajuste="youtube.premium">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
+        <h3 class="seccion">Anuncios</h3>
+        <div class="grupo">
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Anuncios de vídeo</strong>
+              <small>Se saltan solos, antes y durante el vídeo</small>
+            </span>
+            <input type="checkbox" data-ajuste="youtube.anunciosVideo">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Anuncios en Shorts</strong>
+              <small>Pasa al Short siguiente cuando sale un anuncio</small>
+            </span>
+            <input type="checkbox" data-ajuste="youtube.shorts">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Anuncios de la página</strong>
+              <small>Portada, sugerencias, búsquedas y tarjetas patrocinadas</small>
+            </span>
+            <input type="checkbox" data-ajuste="youtube.anuncios">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+        </div>
+        <h3 class="seccion">Promociones</h3>
+        <div class="grupo">
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Premium</strong>
+              <small>Banners y avisos para suscribirse a YouTube Premium</small>
+            </span>
+            <input type="checkbox" data-ajuste="youtube.premium">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+        </div>
       </section>
 
       <section class="panel" id="panel-twitch" role="tabpanel" hidden>
-        <h2>Twitch</h2>
-        <p class="panel-subtitulo">Qué ocultar en twitch.tv</p>
+        <header class="panel-cabecera">
+          <div>
+            <h2>Twitch</h2>
+            <p class="panel-subtitulo">Qué ocultar en twitch.tv</p>
+          </div>
+          <label class="interruptor" title="Activar o desactivar todo Twitch">
+            <input type="checkbox" class="todo-sitio" data-sitio="twitch">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+        </header>
 
         <h3 class="seccion">Anuncios</h3>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Anuncios en directo</strong>
-            <small>Ver y oír el directo en vez del anuncio, sin banners que encojan el vídeo</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.anunciosDirecto">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Anuncios de la página</strong>
-            <small>Portada, vídeos junto al chat y banners patrocinados</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.anuncios">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
+        <div class="grupo">
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Anuncios en directo</strong>
+              <small>Ver y oír el directo en vez del anuncio, sin banners que encojan el vídeo</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.anunciosDirecto">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Anuncios de la página</strong>
+              <small>Portada, vídeos junto al chat y banners patrocinados</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.anuncios">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+        </div>
 
         <h3 class="seccion">Promociones</h3>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Turbo</strong>
-            <small>Botón «Prueba 1 mes sin anuncios»</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.turbo">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Prime</strong>
-            <small>Corona de ofertas de Prime Gaming</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.prime">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Bits</strong>
-            <small>Botones y saldo de Bits en la barra superior, el canal y el chat</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.bits">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Regalar suscripciones</strong>
-            <small>Botón «Regalo: suscripciones extra»</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.regalos">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Botón de suscripción corto</strong>
-            <small>Solo «Suscribirse», sin el texto de descuento</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.textoSuscribirse">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
+        <div class="grupo">
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Turbo</strong>
+              <small>Botón «Prueba 1 mes sin anuncios»</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.turbo">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Prime</strong>
+              <small>Corona de ofertas de Prime Gaming</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.prime">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Bits</strong>
+              <small>Botones y saldo de Bits en la barra superior, el canal y el chat</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.bits">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Regalar suscripciones</strong>
+              <small>Botón «Regalo: suscripciones extra»</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.regalos">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Botón de suscripción corto</strong>
+              <small>Solo «Suscribirse», sin el texto de descuento</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.textoSuscribirse">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+        </div>
 
         <h3 class="seccion">Distracciones</h3>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Mayores donantes</strong>
-            <small>Clasificación encima del chat</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.donantes">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Avisos del chat</strong>
-            <small>Drops, mensajes fijados y tarjetas de eventos encima del chat</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.avisosChat">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Contadores</strong>
-            <small>Número rojo en notificaciones y Prime</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.contadores">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Campana</strong>
-            <small>Avisos del canal, junto al botón de seguir</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.campana">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
+        <div class="grupo">
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Mayores donantes</strong>
+              <small>Clasificación encima del chat</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.donantes">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Avisos del chat</strong>
+              <small>Drops, mensajes fijados y tarjetas de eventos encima del chat</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.avisosChat">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Contadores</strong>
+              <small>Número rojo en notificaciones y Prime</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.contadores">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Campana</strong>
+              <small>Avisos del canal, junto al botón de seguir</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.campana">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+        </div>
 
         <h3 class="seccion">Chat</h3>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Reclamar puntos</strong>
-            <small>Pulsa solo el cofre de bonificación de los puntos del canal</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.reclamarPuntos">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
+        <div class="grupo">
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Reclamar puntos</strong>
+              <small>Pulsa solo el cofre de bonificación de los puntos del canal</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.reclamarPuntos">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+        </div>
 
         <h3 class="seccion">Barra superior</h3>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Navegación</strong>
-            <small>Sin «Siguiendo», «Explorar» ni el menú; el buscador, junto al logo</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.navegacion">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Directo en la barra</strong>
-            <small>En un directo, canal, título y botones arriba y sin buscador</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.directoArriba">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
+        <div class="grupo">
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Navegación</strong>
+              <small>Sin «Siguiendo», «Explorar» ni el menú; el buscador, junto al logo</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.navegacion">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Directo en la barra</strong>
+              <small>En un directo, canal, título y botones arriba y sin buscador</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.directoArriba">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+        </div>
 
         <h3 class="seccion">Barra lateral</h3>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Solo canales que sigo</strong>
-            <small>Sin canales ni categorías recomendados</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.soloSeguidos">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Todos los seguidos en directo</strong>
-            <small>Sin «Mostrar más» ni canales desconectados</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.todosSeguidos">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Canales sin extras</strong>
-            <small>Sin la línea de rachas o eventos bajo el juego</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.tarjetasLimpias">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Barra más ancha</strong>
-            <small>Para que no se corte el nombre del juego</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.barraAncha">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Historias</strong>
-            <small>Botón «Abrir historias»</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.historias">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Rachas</strong>
-            <small>Aviso «¡Mantén tu racha!»</small>
-          </span>
-          <input type="checkbox" data-ajuste="twitch.rachas">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
+        <div class="grupo">
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Solo canales que sigo</strong>
+              <small>Sin canales ni categorías recomendados</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.soloSeguidos">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Todos los seguidos en directo</strong>
+              <small>Sin «Mostrar más» ni canales desconectados</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.todosSeguidos">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Canales sin extras</strong>
+              <small>Sin la línea de rachas o eventos bajo el juego</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.tarjetasLimpias">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Barra más ancha</strong>
+              <small>Para que no se corte el nombre del juego</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.barraAncha">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Historias</strong>
+              <small>Botón «Abrir historias»</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.historias">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Rachas</strong>
+              <small>Aviso «¡Mantén tu racha!»</small>
+            </span>
+            <input type="checkbox" data-ajuste="twitch.rachas">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+        </div>
       </section>
 
       <section class="panel" id="panel-info" role="tabpanel" hidden>
@@ -357,16 +435,19 @@
         <ul class="info-lista">
           <li>Los cambios se aplican al momento en las pestañas abiertas.</li>
           <li>Los ajustes se sincronizan con tu cuenta de Chrome.</li>
+          <li>Las estadísticas se guardan solo en este navegador.</li>
         </ul>
 
-        <label class="opcion">
-          <span class="opcion-texto">
-            <strong>Modo revisión</strong>
-            <small>Marca en rojo lo bloqueado en vez de ocultarlo, para detectar falsos positivos</small>
-          </span>
-          <input type="checkbox" data-ajuste="modoRevision">
-          <span class="interruptor-pista" aria-hidden="true"></span>
-        </label>
+        <div class="grupo">
+          <label class="opcion">
+            <span class="opcion-texto">
+              <strong>Modo revisión</strong>
+              <small>Marca en rojo lo bloqueado en vez de ocultarlo, para detectar falsos positivos</small>
+            </span>
+            <input type="checkbox" data-ajuste="modoRevision">
+            <span class="interruptor-pista" aria-hidden="true"></span>
+          </label>
+        </div>
       </section>
     </main>
   </div>
