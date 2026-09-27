@@ -192,8 +192,12 @@
     // video-player--stream-display-ad_<formato> (lower-third, squeezeback,
     // left-third…) y un alto o ancho en línea menor del 100 %. Se fuerza el
     // tamaño completo; el resto de su CSS (centrado) ya encaja con él
+    // Mientras el directo en pequeño se ve en grande (data-bloqueador-pausa, ver
+    // "Anuncios en directo"), se oculta para no tenerlo en dos sitios. Oculto
+    // sigue reproduciéndose y captureStream() sigue recibiendo fotogramas (probado)
     anunciosDirecto: `
-      [class*="video-player--stream-display-ad_"] { width: 100% !important; height: 100% !important; }`,
+      [class*="video-player--stream-display-ad_"] { width: 100% !important; height: 100% !important; }
+      html[data-bloqueador-pausa] .picture-by-picture-player { display: none !important; }`,
     // "Suscríbete / Renovar suscripción: ¡hasta un 30 % de descuento!" -> "Suscribirse".
     // El texto original se encoge a 0 y se pinta el nuevo con ::after
     textoSuscribirse: `
@@ -240,6 +244,9 @@
   // funcione con la pestaña en segundo plano, que es cuando más molesta el audio.
 
   const ID_CAPA = 'bloqueador-pausa';
+  // En <html> mientras el directo en pequeño se ve en grande: la hoja de
+  // estilos lo oculta en su sitio (REGLAS.anunciosDirecto)
+  const ATTR_PAUSA = 'data-bloqueador-pausa';
   // El <video> del contenido; los de anuncios aparte van más adentro
   const SELECTOR_PRINCIPAL = '.persistent-player [data-a-target="video-ref"] > video';
   let pausa = null; // { principal, capa, video, origen, mutedPrevio }
@@ -297,6 +304,7 @@
     video.volume = pausa.principal.volume;
     pausa.capa.replaceChildren(video);
     pausa.video = video;
+    document.documentElement.setAttribute(ATTR_PAUSA, '');
     // Sin interacción previa con la página Chrome puede bloquear el sonido:
     // entonces se reproduce en silencio y se activa al hacer clic
     video.play().catch(() => {
@@ -310,6 +318,9 @@
     // Twitch puede volver a activar el sonido del anuncio (p. ej. entre anuncios)
     pausa.principal.muted = true;
     if (pausa.video) pausa.video.volume = pausa.principal.volume;
+    // Por si Chrome pausa el directo en pequeño al estar oculto (la copia se
+    // congelaría): se vuelve a mostrar y queda como antes, en los dos sitios
+    if (pausa.origen?.paused) document.documentElement.removeAttribute(ATTR_PAUSA);
     conectarDirecto();
     acelerarAnuncios();
   }
@@ -332,6 +343,7 @@
     pausa.capa.remove();
     pausa.principal.muted = pausa.mutedPrevio;
     pausa = null;
+    document.documentElement.removeAttribute(ATTR_PAUSA);
   }
 
   setInterval(() => {
@@ -342,6 +354,7 @@
       mutedHuerfano = pausa.mutedPrevio;
       pausa.capa.remove();
       pausa = null;
+      document.documentElement.removeAttribute(ATTR_PAUSA);
     }
     // Pausa huérfana que ya no sigue (se ha cambiado de canal): el <video>
     // nuevo no lo hemos tocado, no hay nada que heredar
