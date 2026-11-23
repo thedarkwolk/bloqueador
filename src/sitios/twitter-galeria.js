@@ -11,9 +11,6 @@
   // Pestañas del perfil en las que sale (en Multimedia sobra)
   const RUTA_PERFIL = /^\/([A-Za-z0-9_]{1,15})(?:\/(?:with_replies|reposts|highlights|articles|subs)?)?$/;
 
-  // Icono: Phosphor Icons v2.1.1 (https://phosphoricons.com), licencia MIT
-  const ICONO_VIDEO = 'M240,128a15.74,15.74,0,0,1-7.6,13.51L88.32,229.65a16,16,0,0,1-16.2.3A15.86,15.86,0,0,1,64,216.13V39.87a15.86,15.86,0,0,1,8.12-13.82,16,16,0,0,1,16.2.3L232.4,114.49A15.74,15.74,0,0,1,240,128Z';
-
   const ESTILOS = `
     .bc-galeria { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px; padding: 0 20px; }
     .bc-galeria a { position: relative; aspect-ratio: 1; overflow: hidden; background: var(--bc-borde); }
@@ -22,14 +19,9 @@
     .bc-galeria a:nth-child(7) { border-bottom-left-radius: 12px; }
     .bc-galeria a:nth-child(9) { border-bottom-right-radius: 12px; }
     .bc-galeria img { width: 100%; height: 100%; object-fit: cover; display: block; transition: filter 0.2s; }
-    .bc-galeria a:hover img { filter: brightness(0.8); }
-    .bc-difuminar .bc-sensible img { filter: blur(14px); }
-    .bc-galeria svg {
-      position: absolute; left: 6px; bottom: 6px; width: 16px; height: 16px; fill: #ffffff;
-      filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.8));
-    }`;
+    .bc-galeria a:hover img { filter: brightness(0.8); }`;
 
-  const { crearIcono, crearCaja, crearEnlace, crearCarga, colocar } = BloqueadorRecuadro;
+  const { crearMiniatura, crearCaja, crearEnlace, crearCarga, colocar } = BloqueadorRecuadro;
 
   let ajustes = BloqueadorAjustes.POR_DEFECTO;
   let pendiente = false;
@@ -51,20 +43,10 @@
     return usuario && document.querySelector(`main a[href="/${usuario}/following" i]`) ? usuario : null;
   }
 
-  function crearMiniatura({ ruta, imagen, texto, esVideo, sensible }) {
-    const img = document.createElement('img');
-    img.src = imagen;
-    img.alt = texto;
-    img.loading = 'lazy';
-    const enlace = crearEnlace(ruta, sensible ? 'bc-sensible' : '', img);
-    if (esVideo) enlace.append(crearIcono(ICONO_VIDEO));
-    return enlace;
-  }
-
   function pintar(usuario, medios) {
     if (pintada === medios) return;
     pintada = medios;
-    cuadricula.replaceChildren(...medios.slice(0, MAXIMO).map(crearMiniatura));
+    cuadricula.replaceChildren(...medios.slice(0, MAXIMO).map((medio) => crearMiniatura(medio)));
     caja.querySelector('.bc-mas')?.remove();
     caja.append(crearEnlace(`/${usuario}/media`, 'bc-mas', 'Ver todo'));
   }

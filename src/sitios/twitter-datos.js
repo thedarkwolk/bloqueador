@@ -6,10 +6,11 @@
  * sus variables y el token "Bearer" cambian con cada versión de X, así que se
  * sacan de sus scripts en vez de escribirlos aquí.
  * También las citas de un tuit (SearchByRawQuery, la de la página de citas) y
- * las fotos y vídeos de una cuenta (pestaña Multimedia).
+ * las fotos y vídeos de una cuenta (pestaña Multimedia) o de una búsqueda.
  * Lo usan twitter-cuentas.js (twitter-datos-clasica.js es lo mismo para la web
- * anterior) y twitter-galeria.js y twitter-citas.js (esta en las dos webs: en
- * la clásica tira de los IDs guardados la última vez que se abrió la nueva).
+ * anterior) y twitter-galeria.js, twitter-citas.js y twitter-videos.js (estas dos
+ * en las dos webs: en la clásica tiran de los IDs guardados la última vez que se
+ * abrió la nueva).
  */
 globalThis.BloqueadorTwitterDatos = (() => {
   'use strict';
@@ -27,6 +28,10 @@ globalThis.BloqueadorTwitterDatos = (() => {
     UserVideoTimeline: '/$username/_profile/media',
     SearchByRawQuery: '/$username/status/$id/_engagements/quotes'
   };
+
+  // Espera mínima y máxima cuando X limita las peticiones
+  const ESPERA_LIMITE = 60 * 1000;
+  const MAXIMO_LIMITE = 15 * 60 * 1000;
 
   let api = null; // promesa de { version, bearer, consultas }
 
@@ -122,7 +127,18 @@ globalThis.BloqueadorTwitterDatos = (() => {
     });
     if (!respuesta.ok) {
       const detalle = (await respuesta.text().catch(() => '')).slice(0, 300);
-      throw new Error(`${nombre}: HTTP ${respuesta.status} ${detalle}`);
+      const error = new Error(`${nombre}: HTTP ${respuesta.status} ${detalle}`);
+      if (respuesta.status === 429) {
+        // Límite de X: hasta cuándo, si lo dice (segundos desde 1970)
+        const fin = Number(respuesta.headers.get('x-rate-limit-reset')) * 1000;
+        error.esperar = Math.min(Math.max(fin - Date.now() + 1000, ESPERA_LIMITE), MAXIMO_LIMITE);
+      } else if ([400, 404, 422].includes(respuesta.status) && BloqueadorTwitter.esNueva()) {
+        // La consulta ya no vale: se vuelve a leer de los scripts de X. En la
+        // clásica no se puede, así que se conserva lo que haya
+        api = null;
+        await chrome.storage.local.remove(CLAVE_API);
+      }
+      throw error;
     }
     const datos = await respuesta.json();
     // GraphQL puede responder 200 con errores y sin datos
@@ -223,13 +239,32 @@ globalThis.BloqueadorTwitterDatos = (() => {
     return Object.fromEntries(Object.entries(ultimos).map(([tipo, nodo]) => [tipo, resumir(nodo, tipo)]));
   }
 
+  // "/usuario/status/123/photo/1", que X abre a pantalla completa
+  const rutaDe = (media) => media.expanded_url?.match(/\/[^/]+\/status\/\d+\/(?:photo|video)\/\d+$/)?.[0];
+
+  // Fotos y vídeos de un tuit
+  const mediosDe = (nodo) => (nodo.media_entities2 ?? [])
+    .filter((media) => rutaDe(media) && media.media_url_https)
+    .map((media) => ({
+      id: media.id_str,
+      ruta: rutaDe(media),
+      imagen: `${media.media_url_https}?name=small`,
+      texto: media.ext_alt_text ?? '',
+      esVideo: media.type !== 'photo',
+      sensible: Boolean(media.sensitive_media_warning ?? nodo.legacy?.possibly_sensitive),
+      fecha: nodo.details.created_at_ms
+    }));
+
   /** Citas más destacadas de un tuit: [{ perfil, tweet }] */
   async function buscarCitas(idTweet) {
     const datos = await consultar('SearchByRawQuery', {
       rawQuery: `quoted_tweet_id:${idTweet}`, product: 'Top', querySource: 'tdqt',
       count: 20, cursor: null, withMediaGridTweet: false
     });
-    return (datos?.search_by_raw_query?.search_timeline?.timeline?.instructions ?? [])
+    const instrucciones = datos?.search_by_raw_query?.search_timeline?.timeline?.instructions;
+    // Sin citas también hay instrucciones; si no las hay, es que ha fallado
+    if (!instrucciones) throw new Error('X ha respondido sin datos');
+    return instrucciones
       .flatMap((i) => i.entries ?? [])
       // Solo tuits: también vienen cursores y anuncios ("promoted-…")
       .filter((e) => e.entry_id?.startsWith('tweet-'))
@@ -238,8 +273,67 @@ globalThis.BloqueadorTwitterDatos = (() => {
       .map((nodo) => {
         // Sin el enlace al propio tuit citado
         const urls = (nodo.url_entities ?? []).map((u) => (u.expanded_url?.includes(`/status/${idTweet}`) ? { ...u, display_url: '' } : u));
-        return { perfil: perfilDe(autorDe(nodo)), tweet: resumir({ ...nodo, url_entities: urls }, 'post') };
+        const tweet = resumir({ ...nodo, url_entities: urls }, 'post');
+        tweet.medio = mediosDe(nodo)[0] ?? null;
+        // Se ve el propio medio: no hace falta el "[Foto]" de textoDe
+        if (tweet.medio && /^\[(Foto|Vídeo)\]$/.test(tweet.texto)) tweet.texto = '';
+        return { perfil: perfilDe(autorDe(nodo)), tweet };
       });
+  }
+
+  // Por encima de esto no se nota en pantalla y tarda más en empezar
+  const BITRATE_MAXIMO = 5_000_000;
+
+  // El vídeo de un tuit, listo para reproducir: `mp4` para verlo y `mejor`, el de
+  // más calidad, para descargarlo
+  function videoDe(nodo) {
+    const media = (nodo?.media_entities2 ?? []).find((m) => m.type === 'video' && rutaDe(m));
+    const mp4s = (media?.video_info?.variants ?? [])
+      .filter((v) => v.content_type === 'video/mp4' && v.url)
+      .sort((a, b) => (b.bitrate ?? 0) - (a.bitrate ?? 0));
+    if (!mp4s.length || !autorDe(nodo)?.core) return null;
+    return {
+      // Si el vídeo es de otro tuit (reutilizado), la ruta y el id son los de aquel
+      id: rutaDe(media).match(/\/status\/(\d+)/)[1],
+      ruta: rutaDe(media),
+      mp4: (mp4s.find((v) => (v.bitrate ?? 0) <= BITRATE_MAXIMO) ?? mp4s.at(-1)).url,
+      mejor: mp4s[0].url,
+      poster: media.media_url_https ?? '',
+      sensible: mediosDe(nodo).some((m) => m.id === media.id_str && m.sensible),
+      perfil: perfilDe(autorDe(nodo)),
+      texto: textoDe(nodo).replace(/^\[(Foto|Vídeo)\]$/, ''),
+      fecha: nodo.details.created_at_ms,
+      meGusta: nodo.counts?.favorite_count ?? 0
+    };
+  }
+
+  // Vídeos de una página de resultados: { videos, cursor } (el de la siguiente)
+  function paginaDeVideos(instrucciones) {
+    if (!instrucciones) throw new Error('X ha respondido sin datos');
+    // La primera página trae los cursores como entradas; las siguientes pueden
+    // reemplazarlos una a una (TimelineReplaceEntry)
+    const entradas = instrucciones.flatMap((i) => i.entries ?? (i.entry ? [i.entry] : []));
+    const videos = entradas
+      .filter((e) => e.entry_id?.startsWith('tweet-'))
+      .map((e) => videoDe(desenvolver(e.content?.content?.tweet_results?.result)))
+      .filter(Boolean);
+    const cursor = entradas.find((e) => e.entry_id?.startsWith('cursor-bottom'))?.content;
+    return { videos, cursor: cursor?.value ?? cursor?.content?.value ?? null };
+  }
+
+  /** Vídeos de una cuenta, de más nuevos a más antiguos */
+  async function buscarVideos(usuario, cursor) {
+    const datos = await consultar('UserVideoTimeline', { screenName: usuario, count: 20, cursor });
+    return paginaDeVideos(datos?.user_result_by_screen_name?.result?.profile_user_video_timeline?.timeline?.instructions);
+  }
+
+  /** Vídeos más destacados de una búsqueda o tendencia */
+  async function buscarVideosDe(consulta, cursor) {
+    const datos = await consultar('SearchByRawQuery', {
+      rawQuery: `${consulta} filter:native_video`, product: 'Top', querySource: 'typed_query',
+      count: 20, cursor, withMediaGridTweet: false
+    });
+    return paginaDeVideos(datos?.search_by_raw_query?.search_timeline?.timeline?.instructions);
   }
 
   /** Últimas fotos y vídeos de una cuenta, de más nuevos a más antiguos */
@@ -257,24 +351,12 @@ globalThis.BloqueadorTwitterDatos = (() => {
       if (Array.isArray(nodo)) return nodo.forEach(recorrer);
       const autor = autorDe(nodo)?.core?.screen_name;
       if (nodo.rest_id && nodo.details && autor?.toLowerCase() === usuario.toLowerCase()) {
-        for (const media of nodo.media_entities2 ?? []) {
-          // ".../usuario/status/123/photo/1", que X abre a pantalla completa
-          const ruta = media.expanded_url?.match(/\/[^/]+\/status\/\d+\/(?:photo|video)\/\d+$/)?.[0];
-          if (!ruta || !media.media_url_https) continue;
-          medios.set(media.id_str, {
-            ruta,
-            imagen: `${media.media_url_https}?name=small`,
-            texto: media.ext_alt_text ?? '',
-            esVideo: media.type !== 'photo',
-            sensible: Boolean(media.sensitive_media_warning ?? nodo.legacy?.possibly_sensitive),
-            fecha: nodo.details.created_at_ms
-          });
-        }
+        for (const medio of mediosDe(nodo)) medios.set(medio.id, medio);
       }
       Object.values(nodo).forEach(recorrer);
     })(resultados.map((r) => r.value));
     return [...medios.values()].sort((a, b) => b.fecha - a.fecha);
   }
 
-  return { buscarPerfil, buscarUltimos, buscarCitas, buscarGaleria };
+  return { buscarPerfil, buscarUltimos, buscarCitas, buscarGaleria, buscarVideos, buscarVideosDe };
 })();

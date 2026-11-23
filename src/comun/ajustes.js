@@ -28,6 +28,7 @@ globalThis.BloqueadorAjustes = (() => {
       postAbajo: true,
       copiarEnlace: true,
       descargarVideos: true,
+      videosSeguidos: true,
       cuentasInteres: true,
       citas: true,
       galeria: true,
