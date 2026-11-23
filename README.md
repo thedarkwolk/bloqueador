@@ -24,11 +24,14 @@ Todo se activa y desactiva al momento desde el popup de la extensión, sin recar
 | | |
 |---|---|
 | 🚫 **Anuncios** | Tuits promocionados del timeline, respuestas y búsquedas, y la tendencia promocionada de «Qué está pasando» |
-| 🧹 **Interfaz limpia** | Fuera Premium, Grok (menú, botón flotante e icono de cada tuit), Estudio para creadores, «A quién seguir» y el pie de página |
-| ⭐ **Tus favoritos** | Recuadro en la columna derecha con el último tuit de las cuentas que elijas, filtrando por todo, posts, respuestas o retuits |
+| 🧹 **Interfaz limpia** | Fuera Premium, Grok (menú, botón flotante e icono de cada tuit), Chat, Llamadas, Estudio para creadores, «A quién seguir», «Personas relevantes», el pie de página, «Qué está pasando» fuera de Inicio y «En directo en X» fuera de Explorar |
+| 📝 **Botón de postear abajo** | Al final del menú izquierdo, encima de tu usuario |
+| ⭐ **Tus favoritos** | En Inicio, recuadro en la columna derecha con el último tuit de las cuentas que elijas, filtrando por todo, posts, respuestas o retuits |
+| 💬 **Citas** | Al abrir un tuit, recuadro en la columna derecha con sus citas más relevantes |
+| 🖼️ **Galería** | En los perfiles, recuadro en la columna derecha con sus últimas fotos y vídeos |
 | 📂 **«Qué está pasando» desplegable** | Pulsa el título para plegar o desplegar las tendencias |
 | ⬇️ **Descargar vídeos** | Botón de descarga en los tuits con vídeo, en la mejor calidad disponible |
-| 🔗 **Estadísticas arriba y copiar enlace** | Las visualizaciones pasan a la cabecera del tuit y en su hueco aparece un botón para copiar el enlace |
+| 🔗 **Copiar enlace** | Botón junto a los tres puntos de cada tuit |
 
 ### ▶️ YouTube
 

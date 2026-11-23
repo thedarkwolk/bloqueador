@@ -1,107 +1,98 @@
 /**
- * Bloqueador - Twitter/X: lectura de vídeos (mundo MAIN)
- * X reproduce los vídeos desde blob: (HLS), así que el MP4 no está en la
- * página. Las URLs de los MP4 vienen en las respuestas de su API GraphQL
- * (video_info.variants). Este script corre en el contexto de la propia página
- * (world: "MAIN", document_start) para poder envolver fetch y XMLHttpRequest
- * antes de que X haga sus peticiones, y pasa lo que encuentra al content
- * script (twitter-acciones.js) con postMessage.
- * No tiene acceso a chrome.* ni a los ajustes: si la opción está desactivada,
- * el content script ignora los mensajes.
+ * Bloqueador - Twitter/X: acceso a la página (mundo MAIN)
+ * Corre en el contexto de la propia página (world: "MAIN") porque desde el
+ * mundo aislado no se ve ni React ni el router de X. Hace tres cosas, que piden
+ * los content scripts a través de twitter-comun.js:
+ * - Decir si React ya ha hidratado un elemento. X manda la página ya dibujada
+ *   desde el servidor, y si se inserta algo antes de que React la haga suya,
+ *   la vuelve a dibujar entera.
+ * - Dar los MP4 de un tweet. X reproduce los vídeos desde blob: (HLS), así que
+ *   el MP4 no está en la página: se lee del almacén de Relay, donde X guarda
+ *   todos los tweets que ha cargado.
+ * - Navegar sin recargar: el router de X envuelve history.pushState y solo se
+ *   entera si se llama a la suya (el de la web clásica, con un popstate).
+ * No tiene acceso a chrome.* ni a los ajustes.
  */
 (() => {
   'use strict';
 
-  const ORIGEN = 'bloqueador-videos';
-  const MAX_GUARDADOS = 3000;
-  // id del tweet -> { id, usuario, urls }. Se guardan para reenviarlos cuando
-  // el content script (que carga más tarde, en document_idle) los pida
-  const guardados = new Map();
+  const ORIGEN = 'bloqueador-x';
+  const EVENTO_HIDRATADO = 'bloqueador-hidratado';
 
-  function mejorMp4(media) {
-    const variantes = (media.video_info?.variants ?? [])
-      .filter((v) => v.content_type === 'video/mp4' && v.url)
-      .sort((a, b) => (b.bitrate ?? 0) - (a.bitrate ?? 0));
-    return variantes[0]?.url;
+  function fibraDe(elemento) {
+    const clave = Object.keys(elemento).find((k) => k.startsWith('__reactFiber$'));
+    return clave && elemento[clave];
   }
 
-  function videosDe(tweet) {
-    const media = tweet?.legacy?.extended_entities?.media ?? [];
-    const urls = media
-      .filter((m) => m.type === 'video' || m.type === 'animated_gif')
-      .map(mejorMp4)
+  // ---- Almacén de Relay ----
+
+  let entorno = null;
+
+  // El entorno de Relay está en el contexto de React, por encima de los tweets
+  function buscarEntorno() {
+    for (const elemento of document.querySelectorAll('article, main, aside')) {
+      for (let fibra = fibraDe(elemento); fibra; fibra = fibra.return) {
+        const valor = fibra.memoizedProps?.value;
+        const candidato = valor?.environment ?? valor;
+        if (typeof candidato?.getStore === 'function') return candidato;
+      }
+    }
+    return null;
+  }
+
+  function videosDe(id) {
+    const fuente = entorno.getStore().getSource();
+    const uno = (campo) => (campo?.__ref ? fuente.get(campo.__ref) : null);
+    const varios = (campo) => (campo?.__refs ?? []).map((ref) => fuente.get(ref)).filter(Boolean);
+
+    // Los registros van por el id global de GraphQL, que es "Tweet:<id>" en base64
+    const tweet = fuente.get(btoa(`Tweet:${id}`));
+    const urls = varios(tweet?.media_entities2)
+      .filter((media) => media.type === 'video' || media.type === 'animated_gif')
+      .map((media) => varios(uno(media.video_info)?.variants)
+        .filter((v) => v.content_type === 'video/mp4' && v.url)
+        .sort((a, b) => (b.bitrate ?? 0) - (a.bitrate ?? 0))[0]?.url)
       .filter(Boolean);
     if (!urls.length) return null;
-    const usuario = tweet.core?.user_results?.result?.core?.screen_name
-      ?? tweet.core?.user_results?.result?.legacy?.screen_name
-      ?? '';
-    return { usuario, urls };
+    const autor = uno(uno(uno(tweet.core)?.user_results)?.result);
+    return { id, usuario: uno(autor?.core)?.screen_name ?? '', urls };
   }
 
-  // Los tweets con restricciones vienen envueltos en { tweet: {...} }
-  const desenvolver = (resultado) => resultado?.tweet ?? resultado;
-
-  // Recorre la respuesta buscando tweets (objetos con legacy.id_str). Un tweet
-  // que cita a otro con vídeo se asocia también a ese vídeo, porque en la
-  // página el vídeo citado aparece dentro del tweet que cita
-  function extraer(nodo, encontrados) {
-    if (!nodo || typeof nodo !== 'object') return;
-    if (Array.isArray(nodo)) {
-      for (const hijo of nodo) extraer(hijo, encontrados);
-      return;
-    }
-    const id = nodo.legacy?.id_str;
-    if (id) {
-      const videos = videosDe(nodo) ?? videosDe(desenvolver(nodo.quoted_status_result?.result));
-      if (videos) encontrados.push({ id, ...videos });
-    }
-    for (const valor of Object.values(nodo)) extraer(valor, encontrados);
+  function buscarVideos(ids) {
+    entorno ??= buscarEntorno();
+    if (!entorno) return [];
+    return ids.map((id) => {
+      try {
+        return videosDe(id);
+      } catch {
+        return null; // X ha cambiado el formato del almacén
+      }
+    }).filter(Boolean);
   }
 
-  function enviar(videos) {
-    window.postMessage({ origen: ORIGEN, videos }, location.origin);
-  }
+  // ---- Peticiones de los content scripts ----
 
-  function procesar(datos) {
-    const encontrados = [];
-    extraer(datos, encontrados);
-    if (!encontrados.length) return;
-    for (const video of encontrados) {
-      guardados.delete(video.id);
-      guardados.set(video.id, video);
-    }
-    while (guardados.size > MAX_GUARDADOS) guardados.delete(guardados.keys().next().value);
-    enviar(encontrados);
-  }
-
-  const esGraphql = (url) => String(url).includes('/graphql/');
-
-  const fetchOriginal = window.fetch;
-  window.fetch = async function (recurso, ...resto) {
-    const respuesta = await fetchOriginal.call(this, recurso, ...resto);
-    const url = typeof recurso === 'string' ? recurso : recurso?.url;
-    if (esGraphql(url)) {
-      respuesta.clone().json().then(procesar).catch(() => {});
-    }
-    return respuesta;
-  };
-
-  const abrirOriginal = XMLHttpRequest.prototype.open;
-  XMLHttpRequest.prototype.open = function (metodo, url, ...resto) {
-    if (esGraphql(url)) {
-      this.addEventListener('load', () => {
-        try {
-          if (this.responseType === 'json') procesar(this.response);
-          else if (this.responseType === '' || this.responseType === 'text') procesar(JSON.parse(this.responseText));
-        } catch { /* respuesta que no es JSON */ }
-      });
-    }
-    return abrirOriginal.call(this, metodo, url, ...resto);
-  };
+  // Los eventos del DOM llegan a los dos mundos y se reparten al momento:
+  // cancelar el evento es la respuesta "sí, hidratado"
+  document.addEventListener(EVENTO_HIDRATADO, (e) => {
+    if (fibraDe(e.target)) e.preventDefault();
+  }, true);
 
   window.addEventListener('message', (e) => {
-    if (e.source === window && e.data?.origen === ORIGEN && e.data.pedir) {
-      enviar([...guardados.values()]);
+    if (e.source !== window || e.data?.origen !== ORIGEN) return;
+    const { pedirVideos, navegar } = e.data;
+    if (Array.isArray(pedirVideos)) {
+      const videos = buscarVideos(pedirVideos.filter((id) => /^\d+$/.test(id)));
+      if (videos.length) window.postMessage({ origen: ORIGEN, videos }, location.origin);
+    }
+    // Solo rutas de la propia X ("//otro.sitio" sería otro dominio)
+    if (typeof navegar === 'string' && /^\/(?!\/)/.test(navegar)) {
+      if (document.querySelector('script[src*="/entry-client"]')) {
+        history.pushState({}, '', navegar);
+      } else {
+        history.pushState(history.state, '', navegar);
+        window.dispatchEvent(new PopStateEvent('popstate', { state: history.state }));
+      }
     }
   });
 })();

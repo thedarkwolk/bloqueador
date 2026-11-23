@@ -12,6 +12,9 @@
   'use strict';
 
   const CLAVE_PLEGADO = 'tendenciasPlegadas';
+  // Web nueva y clásica (ver twitter-comun.js)
+  const TENDENCIA = ':is([data-href*="trend_click"], [data-testid="trend"])';
+  const COLUMNA = ':is(aside, [data-testid="sidebarColumn"])';
   const ATTR_LISTA = 'data-bloqueador-plegable';
   const ATTR_CABECERA = 'data-bloqueador-cabecera';
 
@@ -20,12 +23,15 @@
 
   const ESTILOS = `
     [${ATTR_LISTA}="plegada"] > :not([${ATTR_CABECERA}]) { display: none !important; }
+    section[${ATTR_LISTA}="plegada"] > [${ATTR_CABECERA}] { padding-bottom: 16px; }
     [${ATTR_CABECERA}] { position: relative; cursor: pointer; user-select: none; }
     .bloqueador-plegar {
       all: unset; position: absolute; top: 50%; right: 12px; transform: translateY(-50%);
       display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%;
-      color: rgb(113, 118, 123); cursor: pointer; transition: background-color 0.2s, color 0.2s;
+      color: rgb(153, 153, 153); cursor: pointer; transition: background-color 0.2s, color 0.2s;
     }
+    /* En la web nueva la cabecera tiene más relleno arriba: se alinea con el título */
+    section[${ATTR_LISTA}] > [${ATTR_CABECERA}] > .bloqueador-plegar { top: 26px; }
     .bloqueador-plegar:hover, .bloqueador-plegar:focus-visible {
       background-color: rgba(29, 155, 240, 0.1); color: rgb(29, 155, 240);
     }
@@ -75,13 +81,13 @@
       limpiar();
       return;
     }
-    const seccion = document.querySelector('[data-testid="sidebarColumn"] section:has([data-testid="trend"])');
+    const seccion = document.querySelector(`${COLUMNA} section:has(${TENDENCIA})`);
     const titulo = seccion?.querySelector('h2');
-    if (!titulo) return;
+    if (!titulo || !BloqueadorTwitter.hidratado(titulo, programar)) return;
     // La lista es el primer antepasado del título que también tiene las
     // tendencias; su hijo con el título es la cabecera
     let lista = titulo.parentElement;
-    while (lista !== seccion && !lista.querySelector('[data-testid="trend"]')) lista = lista.parentElement;
+    while (lista !== seccion && !lista.querySelector(TENDENCIA)) lista = lista.parentElement;
     const cabecera = [...lista.children].find((hijo) => hijo.contains(titulo));
     if (!cabecera) return;
 

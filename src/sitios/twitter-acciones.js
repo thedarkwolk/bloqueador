@@ -1,24 +1,22 @@
 /**
  * Bloqueador - Twitter/X: acciones del tweet
- * - Estadísticas arriba: las estadísticas (visualizaciones) pasan a la cabecera
- *   del tweet, donde estaba el icono de Grok.
- * - En su hueco de la barra de acciones: botón de copiar enlace.
- * - En los tweets con vídeo: botón de descarga, pegado a "Guardar".
+ * Botones en la cabecera del tweet, pegados a los tres puntos (donde estaba el
+ * icono de Grok):
+ * - Copiar enlace.
+ * - Descargar, en los tweets con vídeo.
  *
- * No se mueven nodos de X (React los volvería a dibujar o se rompería): arriba
- * se pone una copia de las estadísticas que se mantiene al día y la original
- * se oculta.
+ * No se mueven nodos de X (React los volvería a dibujar o se rompería): solo se
+ * insertan los propios.
  *
- * Los vídeos: twitter-api.js (mundo MAIN) lee las URLs de los MP4 en la API de
- * X y las manda aquí por postMessage. La descarga la hace el service worker
- * (src/fondo.js): los content scripts no pueden usar chrome.downloads.
+ * Los vídeos: twitter-api.js (mundo MAIN; en la web clásica,
+ * twitter-api-clasica.js) saca las URLs de los MP4 de los datos de X y las manda aquí por postMessage. La descarga la hace el
+ * service worker (src/fondo.js): los content scripts no pueden usar
+ * chrome.downloads.
  */
 (() => {
   'use strict';
 
-  const ORIGEN = 'bloqueador-videos';
   const ATTR_ID = 'data-bloqueador-id';
-  const ATTR_OCULTO = 'data-bloqueador-oculto';
 
   // Iconos: Phosphor Icons v2.1.1 (https://phosphoricons.com), licencia MIT
   const ICONOS = {
@@ -28,34 +26,40 @@
     error: 'M236.8,188.09,149.35,36.22h0a24.76,24.76,0,0,0-42.7,0L19.2,188.09a23.51,23.51,0,0,0,0,23.72A24.35,24.35,0,0,0,40.55,224h174.9a24.35,24.35,0,0,0,21.33-12.19A23.51,23.51,0,0,0,236.8,188.09ZM222.93,203.8a8.5,8.5,0,0,1-7.48,4.2H40.55a8.5,8.5,0,0,1-7.48-4.2,7.59,7.59,0,0,1,0-7.72L120.52,44.21a8.75,8.75,0,0,1,15,0l87.45,151.87A7.59,7.59,0,0,1,222.93,203.8ZM120,144V104a8,8,0,0,1,16,0v40a8,8,0,0,1-16,0Zm20,36a12,12,0,1,1-12-12A12,12,0,0,1,140,180Z'
   };
 
-  // Los botones imitan los de icono de X: cada uno ocupa 20x20 en la fila y el
-  // círculo de 34px sobresale con márgenes negativos. El del enlace ocupa el
-  // mismo espacio flexible que tenía el hueco de las estadísticas; el de
-  // descarga, lo mismo que "Guardar" (tamaño fijo y 8px a la derecha)
+  // Los botones imitan el de los tres puntos: círculo (algo menor, de 28px,
+  // para que queden juntos) que sobresale de la línea con márgenes negativos.
+  // En la web clásica el icono es algo más grande. El color lo da la clase text-secondary de X
   const ESTILOS = `
-    [${ATTR_OCULTO}] { display: none !important; }
-    .bloqueador-estadisticas { display: flex; align-items: center; margin-right: 8px; }
-    .bloqueador-accion { display: flex; align-items: center; }
-    .bloqueador-enlace { flex: 1; }
-    .bloqueador-descarga { flex: 0 0 auto; margin-right: 8px; }
+    .bloqueador-accion { display: flex; align-items: center; flex: none; }
     .bloqueador-accion button {
       all: unset; box-sizing: border-box; display: grid; place-items: center;
-      width: 34px; height: 34px; margin: -7px; border-radius: 50%;
-      color: rgb(113, 118, 123); cursor: pointer;
-      transition: background-color 0.2s, color 0.2s;
+      width: 28px; height: 28px; margin: -6px 0; border-radius: 50%;
+      color: inherit; cursor: pointer; transition: background-color 0.2s, color 0.2s;
     }
+    .bloqueador-accion svg { width: 16px; height: 16px; fill: currentColor; }
     .bloqueador-accion button:hover, .bloqueador-accion button:focus-visible {
       background-color: rgba(29, 155, 240, 0.1); color: rgb(29, 155, 240);
     }
     .bloqueador-accion button[data-estado="hecho"] { color: rgb(0, 186, 124); }
     .bloqueador-accion button[data-estado="error"] { color: rgb(244, 33, 46); }
-    .bloqueador-accion svg { width: 18.75px; height: 18.75px; fill: currentColor; }`;
+    .bloqueador-accion.bloqueador-clasico { color: rgb(113, 118, 123); margin-right: 4px; }
+    /* Sin la separación entre elementos de la fila (4px en la nueva) */
+    .bloqueador-enlace:has(+ .bloqueador-descarga) { margin-right: -4px; }
+    .bloqueador-clasico.bloqueador-enlace:has(+ .bloqueador-descarga) { margin-right: 0; }
+    .bloqueador-clasico svg { width: 18.75px; height: 18.75px; }`;
+
+  // Cada cuánto se vuelve a pedir un vídeo que X aún no tenía cargado
+  const REINTENTO_VIDEO = 2000;
 
   const videos = new Map(); // id del tweet -> { id, usuario, urls }
+  const pedidos = new Map(); // id del tweet -> cuándo se pidió su vídeo
   let ajustes = BloqueadorAjustes.POR_DEFECTO;
   let pendiente = false;
 
   const activa = (opcion) => ajustes.activo && ajustes.twitter[opcion];
+
+  // text-secondary es de X: da el color del tema
+  const claseWeb = () => (BloqueadorTwitter.esNueva() ? 'text-secondary' : 'bloqueador-clasico');
 
   function crearIcono(d) {
     const ns = 'http://www.w3.org/2000/svg';
@@ -119,105 +123,96 @@
     }
   }
 
-  // Las estadísticas van en la cabecera, pegadas al botón "···" (donde estaba
-  // el icono de Grok). Se sube desde "···" hasta el primer elemento que está en
-  // una fila flex sin reparto de espacio: insertando justo antes, quedan al
-  // lado. Más arriba la fila es space-between y las separaría de "···"
-  function huecoCabecera(articulo) {
-    for (let e = articulo.querySelector('[data-testid="caret"]'); e?.parentElement && e !== articulo; e = e.parentElement) {
+  // Los botones van en la cabecera, pegados a los tres puntos: es el único menú
+  // del tweet fuera de la barra de acciones. Se sube desde él hasta el primer
+  // elemento que está en una fila flex sin reparto de espacio: insertando justo
+  // antes, quedan al lado. Más arriba la fila es space-between y los separaría
+  function huecoCabecera(articulo, barra) {
+    // En la clásica puede tardar en aparecer: si no está, se espera a otra pasada
+    // (el siguiente menú de la página del tweet es el de ordenar respuestas)
+    const menu = BloqueadorTwitter.esNueva()
+      ? [...articulo.querySelectorAll('button[aria-haspopup="menu"]')]
+        .find((boton) => boton.closest('article') === articulo && !barra.contains(boton))
+      : articulo.querySelector('[data-testid="caret"]');
+    for (let e = menu; e?.parentElement && e !== articulo; e = e.parentElement) {
       const fila = getComputedStyle(e.parentElement);
       if (fila.display.includes('flex') && fila.flexDirection === 'row' && !fila.justifyContent.startsWith('space-')) return e;
     }
     return null;
   }
 
-  // Copia de las estadísticas: mismo contenido (clases de X incluidas, así se
-  // ve igual) y el clic se reenvía al original para que X navegue como siempre
-  function crearCopiaEstadisticas(original, articulo, id) {
-    const contenedor = document.createElement('div');
-    contenedor.className = 'bloqueador-estadisticas';
-    contenedor.setAttribute(ATTR_ID, id);
-    const copia = original.cloneNode(true);
-    copia.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      articulo.querySelector('[role="group"] a[href*="/analytics"]')?.click();
-    });
-    contenedor.append(copia);
-    return contenedor;
+  // Responder, repostear, me gusta…
+  function buscarBarra(articulo) {
+    return [...articulo.querySelectorAll('[role="group"]')]
+      .find((grupo) => grupo.closest('article') === articulo && grupo.querySelector('[data-engagement-action], [data-testid="reply"]'));
+  }
+
+  // "/usuario/status/123" del propio tweet. En las listas lo lleva su recuadro;
+  // en la página del tweet (y en la web clásica), el enlace de la fecha o el de
+  // las estadísticas
+  function rutaTweet(articulo) {
+    const recuadro = articulo.closest('[data-href*="/status/"]');
+    if (recuadro) return recuadro.dataset.href;
+    return [...articulo.querySelectorAll('a[href*="/status/"]')]
+      .find((a) => a.closest('article') === articulo && /^\/[^/]+\/status\/\d+(\/analytics)?$/.test(a.getAttribute('href')))
+      ?.getAttribute('href') ?? '';
+  }
+
+  // Vídeo del tweet o, si no tiene, del que cita. Si X lo tiene cargado pero
+  // aún no se ha pedido, se pide y llegará en otra pasada
+  function buscarVideo(articulo, id) {
+    if (!articulo.querySelector('video, [data-testid="videoPlayer"]')) return null;
+    const enlaces = [...articulo.querySelectorAll('a[href*="/status/"]')]
+      .map((a) => a.getAttribute('href').match(/\/status\/(\d+)/)?.[1]);
+    const ids = [...new Set([id, ...enlaces.filter(Boolean)])];
+    const encontrado = ids.map((i) => videos.get(i)).find(Boolean);
+    if (encontrado) return encontrado;
+    const ahora = Date.now();
+    const pendientes = ids.filter((i) => ahora - (pedidos.get(i) ?? 0) > REINTENTO_VIDEO);
+    if (pendientes.length) {
+      for (const i of pendientes) pedidos.set(i, ahora);
+      BloqueadorTwitter.pedirVideos(pendientes);
+    }
+    return null;
   }
 
   function revisarTweet(articulo) {
-    const barra = articulo.querySelector('[role="group"]');
-    const estadisticas = barra?.querySelector('a[href*="/analytics"]');
-    // El enlace de estadísticas es "/usuario/status/123/analytics" del propio
-    // tweet; sin él, el enlace de la fecha
-    const enlace = estadisticas?.getAttribute('href') ?? articulo.querySelector('a[href*="/status/"]:has(time)')?.getAttribute('href') ?? '';
-    const [, usuario, id] = enlace.match(/^\/([^/]+)\/status\/(\d+)/) ?? [];
+    if (!BloqueadorTwitter.hidratado(articulo, programar)) return;
+    const barra = buscarBarra(articulo);
+    const [, usuario, id] = rutaTweet(articulo).match(/^\/([^/]+)\/status\/(\d+)/) ?? [];
 
-    // X reutiliza los <article> al hacer scroll: fuera lo que sea de otro tweet
+    // Por si X reutiliza el <article>: fuera lo que sea de otro tweet
     for (const e of articulo.querySelectorAll(`[${ATTR_ID}]`)) {
       if (e.getAttribute(ATTR_ID) !== id) e.remove();
     }
     if (!barra || !id) return;
 
-    // 1. Estadísticas arriba
-    const huecoEstadisticas = estadisticas?.closest('[role="group"] > *');
-    let copia = articulo.querySelector('.bloqueador-estadisticas');
-    if (activa('reordenar') && huecoEstadisticas) {
-      if (!copia) {
-        const destino = huecoCabecera(articulo);
-        if (destino) {
-          copia = crearCopiaEstadisticas(estadisticas, articulo, id);
-          destino.before(copia);
-        }
-      } else if (copia.textContent !== estadisticas.textContent) {
-        // Las visualizaciones van subiendo
-        copia.replaceWith(copia = crearCopiaEstadisticas(estadisticas, articulo, id));
-      }
-    } else {
-      copia?.remove();
-      copia = null;
-    }
-    const movidas = !!copia;
-    for (const e of barra.querySelectorAll(`[${ATTR_OCULTO}]`)) {
-      if (e !== huecoEstadisticas || !movidas) e.removeAttribute(ATTR_OCULTO);
-    }
-    if (movidas) huecoEstadisticas.setAttribute(ATTR_OCULTO, '');
-
-    // 2. Copiar enlace, en el hueco de las estadísticas
-    const botonEnlace = articulo.querySelector('.bloqueador-enlace');
-    if (movidas && !botonEnlace) {
+    const enlace = articulo.querySelector('.bloqueador-enlace');
+    if (!activa('copiarEnlace')) {
+      enlace?.remove();
+    } else if (!enlace) {
       const url = `https://x.com/${usuario}/status/${id}`;
-      huecoEstadisticas.before(crearContenedor('bloqueador-enlace', id,
+      huecoCabecera(articulo, barra)?.before(crearContenedor('bloqueador-enlace', id,
         crearBoton('Copiar enlace', ICONOS.enlace, (b) => copiarEnlace(url, b))));
-    } else if (!movidas) {
-      botonEnlace?.remove();
     }
 
-    // 3. Descargar, pegado a "Guardar" (entre Guardar y Compartir)
-    const video = activa('descargarVideos') && articulo.querySelector('[data-testid="videoPlayer"]')
-      ? [...articulo.querySelectorAll('a[href*="/status/"]')]
-        .map((a) => videos.get(a.getAttribute('href').match(/\/status\/(\d+)/)?.[1]))
-        .find(Boolean)
-      : null;
+    const video = activa('descargarVideos') ? buscarVideo(articulo, id) : null;
     let descarga = articulo.querySelector('.bloqueador-descarga');
     if (descarga && descarga.dataset.video !== video?.id) {
       descarga.remove();
       descarga = null;
     }
-    const guardar = barra.querySelector('[data-testid="bookmark"], [data-testid="removeBookmark"]')?.closest('[role="group"] > *');
-    if (video && !descarga && guardar) {
+    if (video && !descarga) {
       descarga = crearContenedor('bloqueador-descarga', id,
         crearBoton('Descargar vídeo', ICONOS.descargar, (b) => descargar(video, b)));
       descarga.dataset.video = video.id;
-      guardar.after(descarga);
+      huecoCabecera(articulo, barra)?.before(descarga);
     }
   }
 
   function crearContenedor(clase, id, boton) {
     const contenedor = document.createElement('div');
-    contenedor.className = `bloqueador-accion ${clase}`;
+    contenedor.className = `bloqueador-accion ${clase} ${claseWeb()}`;
     contenedor.setAttribute(ATTR_ID, id);
     contenedor.append(boton);
     return contenedor;
@@ -225,7 +220,7 @@
 
   function revisar() {
     pendiente = false;
-    for (const articulo of document.querySelectorAll('article[data-testid="tweet"]')) revisarTweet(articulo);
+    for (const articulo of BloqueadorTwitter.tweets()) revisarTweet(articulo);
   }
 
   function programar() {
@@ -234,13 +229,10 @@
     requestAnimationFrame(revisar);
   }
 
-  window.addEventListener('message', (e) => {
-    if (e.source !== window || e.data?.origen !== ORIGEN || !Array.isArray(e.data.videos)) return;
-    for (const video of e.data.videos) videos.set(String(video.id), video);
+  BloqueadorTwitter.alRecibirVideos((recibidos) => {
+    for (const video of recibidos) videos.set(String(video.id), video);
     programar();
   });
-  // twitter-api.js ya lleva un rato recogiendo vídeos: pedirle los que tenga
-  window.postMessage({ origen: ORIGEN, pedir: true }, location.origin);
 
   const hoja = document.createElement('style');
   hoja.textContent = ESTILOS;
