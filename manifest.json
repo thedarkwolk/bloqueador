@@ -36,7 +36,7 @@
     },
     {
       "matches": ["https://x.com/*", "https://twitter.com/*"],
-      "js": ["src/comun/ajustes.js", "src/comun/ocultar.js", "src/comun/estadisticas.js", "src/sitios/twitter-comun.js", "src/sitios/twitter.js", "src/sitios/twitter-acciones.js", "src/sitios/twitter-datos.js", "src/sitios/twitter-datos-clasica.js", "src/sitios/twitter-recuadro.js", "src/sitios/twitter-cuentas.js", "src/sitios/twitter-citas.js", "src/sitios/twitter-galeria.js", "src/sitios/twitter-videos.js", "src/sitios/twitter-tendencias.js"],
+      "js": ["src/comun/ajustes.js", "src/comun/ocultar.js", "src/comun/estadisticas.js", "src/sitios/twitter-comun.js", "src/sitios/twitter.js", "src/sitios/twitter-acciones.js", "src/sitios/twitter-datos.js", "src/sitios/twitter-datos-clasica.js", "src/sitios/twitter-recuadro.js", "src/sitios/twitter-cuentas.js", "src/sitios/twitter-citas.js", "src/sitios/twitter-galeria.js", "src/sitios/twitter-visor.js", "src/sitios/twitter-tendencias.js"],
       "run_at": "document_idle"
     },
     {

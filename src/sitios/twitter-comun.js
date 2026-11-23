@@ -53,6 +53,32 @@ globalThis.BloqueadorTwitter = (() => {
     window.postMessage({ origen: ORIGEN, pedirTodos: true }, location.origin);
   }
 
+  // Peticiones a twitter-api.js que esperan respuesta
+  let turnos = 0;
+  function preguntar(peticion, espera) {
+    const turno = ++turnos;
+    return new Promise((resolver, rechazar) => {
+      const terminar = (accion) => {
+        clearTimeout(temporizador);
+        window.removeEventListener('message', escuchar);
+        accion();
+      };
+      const escuchar = (e) => {
+        if (e.source !== window || e.data?.origen !== ORIGEN || e.data.respuesta !== turno) return;
+        terminar(() => (e.data.error ? rechazar(new Error(e.data.error)) : resolver(e.data)));
+      };
+      const temporizador = setTimeout(() => terminar(() => rechazar(new Error('X no responde'))), espera);
+      window.addEventListener('message', escuchar);
+      window.postMessage({ origen: ORIGEN, turno, ...peticion }, location.origin);
+    });
+  }
+
+  // Datos de un tuit que X ya tiene cargado, como en su API (null si no lo tiene)
+  const pedirTuit = (id) => preguntar({ pedirTuit: id }, 500).then((r) => r.tuit, () => null);
+
+  // Me gusta, repost… (ver OPERACIONES en twitter-api.js)
+  const ejecutar = (nombre, id, tuit) => preguntar({ ejecutar: { nombre, id, tuit } }, 15000);
+
   function navegar(ruta) {
     window.postMessage({ origen: ORIGEN, navegar: ruta }, location.origin);
   }
@@ -81,5 +107,5 @@ globalThis.BloqueadorTwitter = (() => {
   marcarPagina();
   new MutationObserver(marcarPagina).observe(document.body, { childList: true, subtree: true });
 
-  return { esNueva, hidratado, pedirVideos, alRecibirVideos, navegar, tweets };
+  return { esNueva, hidratado, pedirVideos, alRecibirVideos, pedirTuit, ejecutar, navegar, tweets };
 })();

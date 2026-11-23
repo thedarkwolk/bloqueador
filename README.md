@@ -31,7 +31,7 @@ Todo se activa y desactiva al momento desde el popup de la extensión, sin recar
 | 🖼️ **Galería** | En los perfiles, recuadro en la columna derecha con sus últimas fotos y vídeos |
 | 📂 **«Qué está pasando» desplegable** | Pulsa el título para plegar o desplegar las tendencias |
 | ⬇️ **Descargar vídeos** | Botón de descarga en los tuits con vídeo, en la mejor calidad disponible |
-| 🎬 **Pasar de vídeo en vídeo** | En la vista de vídeo, la rueda o ↑ ↓ pasan a otro vídeo del perfil, de la búsqueda o del hashtag, como en el móvil |
+| 🎬 **Visor propio** | Fotos y vídeos a pantalla completa: la rueda o ↑ ↓ pasan a otros del perfil, de la búsqueda o del hashtag, como en el móvil. Con me gusta, repost, respuestas, velocidad, subtítulos y ventana flotante |
 | 🔗 **Copiar enlace** | Botón junto a los tres puntos de cada tuit |
 
 ### ▶️ YouTube
