@@ -26,6 +26,7 @@ globalThis.BloqueadorAjustes = (() => {
       directoSoloExplorar: true,
       pieDePagina: true,
       postAbajo: true,
+      sinLupa: true,
       copiarEnlace: true,
       descargarVideos: true,
       visor: true,

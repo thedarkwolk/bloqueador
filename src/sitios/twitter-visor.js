@@ -1,17 +1,17 @@
 /**
- * Bloqueador - Twitter/X: visor propio de fotos y vídeos
- * Al abrir una foto o un vídeo a pantalla completa (…/status/123/photo/1,
- * …/video/1 o …/mediaviewer) se pone este visor encima del de X: así sirve para
- * todas las formas de abrirlos y "atrás" sigue funcionando. Las dos primeras son
- * un diálogo y va dentro, para que pulsarlo no lo cierre; la otra es una página.
+ * Bloqueador - Twitter/X: visor propio de vídeos
+ * Al abrir un vídeo a pantalla completa (…/status/123/video/1 o …/mediaviewer) se
+ * pone este visor encima del de X: así sirve para todas las formas de abrirlos y
+ * "atrás" sigue funcionando. La primera es un diálogo y va dentro, para que
+ * pulsarlo no lo cierre; la otra es una página. Las fotos se dejan al de X.
  * Con el ratón, X no abre los vídeos de los tweets al pulsarlos (los pausa): aquí
  * sí, siguiendo por donde iban.
  *
- * - La rueda, ↑ ↓ o los botones pasan a otra foto o vídeo del mismo perfil o de
- *   una búsqueda: la página de búsqueda o de hashtag desde la que se abrió (en
- *   ese caso se empieza por ella) o, si no, el primer hashtag del tuit. No se
- *   usa el visor de X para cada uno porque solo se deja abrir 50 veces cada 15
- *   minutos (tweetMediaViewerQuery).
+ * - La rueda, ↑ ↓ o los botones pasan a otro vídeo del mismo perfil o de una
+ *   búsqueda: la página de búsqueda o de hashtag desde la que se abrió (en ese
+ *   caso se empieza por ella) o, si no, el primer hashtag del tuit. No se usa el
+ *   visor de X para cada uno porque solo se deja abrir 50 veces cada 15 minutos
+ *   (tweetMediaViewerQuery).
  * - Me gusta y repost los manda la propia X con su código (twitter-api.js); en
  *   la web clásica se abre su página de confirmación.
  * - Un panel lateral enseña el tuit y sus respuestas.
@@ -22,7 +22,9 @@
 (() => {
   'use strict';
 
-  const RUTA_MEDIO = /^\/([^/]+)\/status\/(\d+)\/(?:(photo|video)\/(\d+)|mediaviewer)\/?$/;
+  const RUTA_MEDIO = /^\/([^/]+)\/status\/(\d+)\/(?:video\/(\d+)|mediaviewer)\/?$/;
+  // Las fotos las enseña el visor de X
+  const RUTA_FOTO = /^\/[^/]+\/status\/\d+\/photo\//;
   const ATTR_VISOR = 'data-bloqueador-visor';
   const CLAVE_FUENTE = 'videosFuente';
   const FUENTES = { perfil: 'Perfil', tendencia: 'Tendencia' };
@@ -36,11 +38,6 @@
   const REINTENTO = 5 * 1000;
   const SALTO = 5; // segundos, con ← →
   const VELOCIDADES = [1, 1.25, 1.5, 2];
-  // Al ampliar una foto se ve a su tamaño real, dentro de estos límites; con la
-  // rueda se puede llegar hasta ZOOM_MAXIMO
-  const ZOOM_INICIAL = [2, 4];
-  const ZOOM_MAXIMO = 8;
-  const PASO_ZOOM = 1.2;
   // Lo que hay que quedarse en uno para pedir sus respuestas o sus subtítulos
   const ESPERA_EXTRAS = 500;
   const ESPERA_CONFIRMAR = 3000;
@@ -102,11 +99,8 @@
 
     .bv-bloque { position: relative; height: 100%; scroll-snap-align: start; scroll-snap-stop: always; overflow: hidden; }
     .bv-medio { position: absolute; inset: 0; overflow: hidden; }
-    .bv-medio :is(video, img) { width: 100%; height: 100%; object-fit: contain; display: block; }
-    .bv-medio video { cursor: pointer; }
-    .bv-medio img { cursor: zoom-in; transition: transform 0.2s; }
-    .bv-medio img.bv-ampliada { cursor: zoom-out; transform: scale(var(--bv-zoom)); }
-    .bv-tapado :is(video, img) { filter: blur(40px); }
+    .bv-medio video { width: 100%; height: 100%; object-fit: contain; display: block; cursor: pointer; }
+    .bv-tapado video { filter: blur(40px); }
     .bv-aviso {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); pointer-events: none; z-index: 1;
       padding: 8px 14px; border-radius: 9999px; background: rgba(15, 20, 25, 0.8); font-size: 14px;
@@ -123,7 +117,6 @@
       margin: 4px 0 0; white-space: pre-line; overflow-wrap: anywhere; max-width: 760px;
       display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden;
     }
-    .bv-limpio :is(.bv-info, .bv-acciones, .bv-paso) { opacity: 0; pointer-events: none; }
     .bv-acciones {
       position: absolute; right: 20px; bottom: 36px; z-index: 1;
       display: flex; flex-direction: column; align-items: center; gap: 8px;
@@ -183,7 +176,7 @@
   let hayAnterior = false;
   // Ruta que se deja para el visor de X (lo que el nuestro no sabe abrir)
   let omitida = '';
-  // Lo abierto: { ruta, usuario, id, tipo, sesion }. La sesión es la lista por la
+  // Lo abierto: { ruta, usuario, id, sesion }. La sesión es la lista por la
   // que se pasa: { clave, pedir, tuits, cursor, cargando, agotada, reintento }
   let abierto = null;
   let actual = -1; // posición en abierto.sesion.tuits
@@ -204,6 +197,9 @@
   // ---- De qué página se viene ----
 
   function anotarPagina() {
+    // Desde la foto de un tuit se puede pasar a su vídeo sin salir del visor de X,
+    // así que no es otra página a la que volver
+    if (RUTA_FOTO.test(location.pathname)) return;
     hayAnterior = true;
     // La del tuit no cuenta como otra búsqueda: se puede abrir el tuit desde la
     // búsqueda y luego su vídeo
@@ -218,12 +214,12 @@
 
   // ---- Lista por la que se pasa ----
 
-  function crearSesion(tuit, tipo, elegida) {
+  function crearSesion(tuit, elegida) {
     const consulta = elegida === 'tendencia' ? tendencia() : '';
     return {
       clave: consulta ? `tendencia ${consulta}` : 'perfil',
       pedir: (cursor) => BloqueadorTwitterDatos.buscarMedios(
-        consulta ? { consulta } : { usuario: tuit.perfil.usuario }, tipo, cursor
+        consulta ? { consulta } : { usuario: tuit.perfil.usuario }, cursor
       ),
       tuits: [tuit],
       cursor: null,
@@ -251,7 +247,7 @@
       sesion.cursor = cursor;
       if (sesion === abierto?.sesion) completarPista(encima.length);
     } catch (error) {
-      console.debug('[Bloqueador:Twitter]', 'No se han podido cargar más medios:', error.message);
+      console.debug('[Bloqueador:Twitter]', 'No se han podido cargar más vídeos:', error.message);
       const espera = error.esperar ?? REINTENTO;
       sesion.reintento = Date.now() + espera;
       setTimeout(programar, espera + 50);
@@ -330,6 +326,25 @@
     else BloqueadorTwitter.navegar(`/${usuario}/status/${id}`);
   }
 
+  // Lo negro de alrededor del vídeo, que es parte de su elemento (object-fit:
+  // contain); mientras carga no hay vídeo y lo es todo lo que no sea un control
+  function esNegro({ target, clientX, clientY }) {
+    if (!target.matches('video')) return target.matches('.bv-escena, .bv-pista, .bv-bloque, .bv-medio');
+    const { left, top, width, height } = target.getBoundingClientRect();
+    const escala = Math.min(width / target.videoWidth, height / target.videoHeight);
+    return Math.abs(clientX - left - width / 2) > (target.videoWidth * escala) / 2
+      || Math.abs(clientY - top - height / 2) > (target.videoHeight * escala) / 2;
+  }
+
+  // Se sale si se pulsa y se suelta ahí, no al soltar ahí algo que se arrastraba
+  let pulsadoNegro = false;
+  escena.addEventListener('pointerdown', (evento) => { pulsadoNegro = esNegro(evento); }, true);
+  escena.addEventListener('click', (evento) => {
+    if (!pulsadoNegro || !esNegro(evento)) return;
+    evento.stopPropagation();
+    salir();
+  }, true);
+
   // Los enlaces de dentro cierran el visor: si no, seguiría encima de la página
   function enlazar(ruta, clase, contenido) {
     const enlace = crearEnlace(ruta, clase, contenido);
@@ -398,7 +413,7 @@
     poner('respuestas', false, 'respuestas', tuit.respuestas);
   }
 
-  // ---- Bloques (un tuit con sus medios) ----
+  // ---- Bloques (un tuit con sus vídeos) ----
 
   const medioDe = (bloque) => bloque.tuit.medios[bloque.indice];
   const videoDe = (bloque) => bloque?.querySelector('video');
@@ -445,7 +460,7 @@
     return bloque;
   }
 
-  // Solo tienen su medio puesto el bloque que se ve y los de al lado
+  // Solo tienen su vídeo puesto el bloque que se ve y los de al lado
   function cargarMedio(bloque) {
     const medio = medioDe(bloque);
     if (bloque.cargado === medio) return;
@@ -454,16 +469,14 @@
     const tapado = medio.sensible && ajustes.twitter.galeriaDifuminar && !bloque.destapado;
     zona.classList.toggle('bv-tapado', tapado);
     const nota = crear('div', 'bv-aviso', tapado ? 'Contenido sensible: pulsa para verlo' : '');
-    const elemento = medio.esVideo ? crearVideo(bloque, medio, nota) : crearFoto(medio);
-    elemento.addEventListener('click', (evento) => {
+    const video = crearVideo(bloque, medio, nota);
+    video.addEventListener('click', () => {
       if (destapar(bloque) || Date.now() - bloque.destapado < ESPERA_DESTAPAR) return;
-      if (medio.esVideo) alternarPausa(elemento);
-      else ampliar(elemento, evento);
+      alternarPausa(video);
     });
     quitarVideo(bloque);
-    zona.replaceChildren(elemento, nota);
-    bloque.querySelector('.bv-barra').hidden = !medio.esVideo;
-    bloque.querySelector('.bv-acciones-video').replaceChildren(...(medio.esVideo ? accionesVideo(bloque, medio) : []));
+    zona.replaceChildren(video, nota);
+    bloque.querySelector('.bv-acciones-video').replaceChildren(...accionesVideo(bloque, medio));
     const cuenta = bloque.querySelector('.bv-cuenta');
     if (cuenta) cuenta.textContent = `${bloque.indice + 1} / ${bloque.tuit.medios.length}`;
     pintarAcciones(bloque.tuit);
@@ -497,7 +510,6 @@
   }
 
   function cambiarMedio(bloque, pasos) {
-    reducir(bloque.querySelector('.bv-ampliada'));
     const indice = bloque.indice + pasos;
     if (!bloque.tuit.medios[indice]) return false;
     bloque.indice = indice;
@@ -508,70 +520,6 @@
     }
     return true;
   }
-
-  // Fotos: un clic las amplía por donde se pulsa; se mueven con el ratón y la
-  // rueda acerca o aleja
-  function crearFoto(medio) {
-    const foto = crear('img');
-    foto.medio = medio;
-    // Primero la pequeña, que ya suele estar descargada; luego la que llena la
-    // pantalla y, al ampliar, la original (hasta 4096 px)
-    foto.src = medio.imagen;
-    foto.alt = medio.texto;
-    mejorarFoto(foto, Math.max(screen.width, screen.height) * devicePixelRatio > 2048 ? 'orig' : 'large');
-    foto.addEventListener('mousemove', (evento) => {
-      if (foto.classList.contains('bv-ampliada')) apuntar(foto, evento);
-    });
-    return foto;
-  }
-
-  const CALIDADES = ['small', 'large', 'orig'];
-
-  function mejorarFoto(foto, calidad) {
-    if (CALIDADES.indexOf(calidad) <= CALIDADES.indexOf(foto.pedida)) return;
-    foto.pedida = calidad;
-    const grande = new Image();
-    grande.src = `${foto.medio.original}?name=${calidad}`;
-    // Se cambia ya decodificada, para que no parpadee; si entretanto ha llegado
-    // una mejor, se queda esa
-    grande.decode().then(() => {
-      if (CALIDADES.indexOf(calidad) <= CALIDADES.indexOf(foto.puesta)) return;
-      foto.puesta = calidad;
-      foto.src = grande.src;
-    }, () => { if (foto.pedida === calidad) foto.pedida = foto.puesta; });
-  }
-
-  function apuntar(foto, evento) {
-    const { left, top, width, height } = foto.parentElement.getBoundingClientRect();
-    foto.style.transformOrigin = `${((evento.clientX - left) / width) * 100}% ${((evento.clientY - top) / height) * 100}%`;
-  }
-
-  function ponerZoom(foto, zoom) {
-    foto.zoom = zoom;
-    foto.style.setProperty('--bv-zoom', zoom);
-  }
-
-  function ampliar(foto, evento) {
-    if (foto.classList.contains('bv-ampliada')) {
-      reducir(foto);
-      return;
-    }
-    mejorarFoto(foto, 'orig');
-    const { ancho = 0, alto = 0 } = foto.medio;
-    const encaje = Math.min(foto.clientWidth / ancho, foto.clientHeight / alto);
-    const [minimo, maximo] = ZOOM_INICIAL;
-    ponerZoom(foto, Math.min(Math.max(1 / (encaje * devicePixelRatio) || minimo, minimo), maximo));
-    apuntar(foto, evento);
-    foto.classList.add('bv-ampliada');
-    foto.closest('.bv-bloque').classList.add('bv-limpio');
-  }
-
-  function reducir(foto) {
-    foto?.classList.remove('bv-ampliada');
-    foto?.closest('.bv-bloque').classList.remove('bv-limpio');
-  }
-
-  const fotoAmpliada = () => pista.children[actual]?.querySelector('.bv-ampliada');
 
   function crearVideo(bloque, medio, nota) {
     const video = crear('video');
@@ -752,7 +700,6 @@
 
   function activar(i) {
     if (i < 0 || i === actual) return;
-    reducir(fotoAmpliada());
     actual = i;
     cargarCercanos();
     reproducirActual();
@@ -769,13 +716,11 @@
       if (!bloque) return;
       completar(bloque);
       cargarSubtitulos(bloque);
-      const foto = bloque.querySelector('.bv-medio img');
-      if (foto) mejorarFoto(foto, 'orig');
       if (panelAbierto) cargarRespuestas(bloque.tuit);
     }, ESPERA_EXTRAS);
   }
 
-  // Lo que les falta a los tuits de la cuadrícula de fotos (ver tuitDe)
+  // Lo que les falta a los tuits que vienen incompletos (ver tuitDe)
   async function completar(bloque) {
     const { tuit } = bloque;
     if (!tuit.parcial) return;
@@ -908,18 +853,18 @@
 
   // Empieza una lista nueva por un tuit
   function empezar(tuit, indice, elegida) {
-    abierto.sesion = crearSesion(tuit, abierto.tipo, elegida);
+    abierto.sesion = crearSesion(tuit, elegida);
     vaciar();
     aviso.textContent = '';
-    const bloque = crearBloque(tuit, Math.min(indice, tuit.medios.length - 1));
+    const bloque = crearBloque(tuit, indice);
     pista.append(bloque);
     observador.observe(bloque);
     activar(0);
     cargarMas();
   }
 
-  async function abrir(contenedor, [ruta, usuario, id, tipo = 'video', numero = '1']) {
-    const propio = { ruta, usuario, id, tipo, sesion: null };
+  async function abrir(contenedor, [ruta, usuario, id, numero = '1']) {
+    const propio = { ruta, usuario, id, sesion: null };
     abierto = propio;
     vaciar();
     if (pulsado?.id === id) {
@@ -940,7 +885,7 @@
     try {
       tuit = await BloqueadorTwitterDatos.buscarTuit(id);
     } catch (error) {
-      console.debug('[Bloqueador:Twitter]', 'No se ha podido abrir el medio:', error.message);
+      console.debug('[Bloqueador:Twitter]', 'No se ha podido abrir el vídeo:', error.message);
     }
     if (abierto !== propio) return;
     // Directos, tarjetas… o un fallo: se queda el visor de X
@@ -950,7 +895,9 @@
       for (const video of contenedor.querySelectorAll('[role="dialog"] video, main video')) video.play().catch(() => {});
       return;
     }
-    empezar(tuit, Number(numero) - 1, busqueda ? 'tendencia' : fuente);
+    // El número cuenta también las fotos del tuit, que aquí no están
+    const indice = tuit.medios.findIndex((m) => m.numero === Number(numero));
+    empezar(tuit, Math.max(indice, 0), busqueda ? 'tendencia' : fuente);
     const video = videoDe(pista.children[0]);
     if (video && pulsado?.id === id) video.currentTime = pulsado.segundo;
     pulsado = null;
@@ -1046,7 +993,8 @@
     if (!activa() || visor.isConnected || evento.button !== 0) return;
     if (evento.ctrlKey || evento.metaKey || evento.shiftKey || evento.altKey) return;
     const articulo = evento.target.closest?.('article');
-    if (!articulo || RUTA_MEDIO.test(location.pathname) || !superficieDe(evento.target)) return;
+    if (!articulo || !superficieDe(evento.target)) return;
+    if (RUTA_MEDIO.test(location.pathname) || RUTA_FOTO.test(location.pathname)) return;
     const ruta = rutaDelTuit(evento.target, articulo);
     const id = ruta?.match(/\/status\/(\d+)/)[1];
     if (!id) return;
@@ -1068,15 +1016,6 @@
     evento.stopPropagation();
     if (panel.contains(evento.target)) return;
     evento.preventDefault();
-    const foto = fotoAmpliada();
-    if (foto) {
-      const zoom = foto.zoom * (evento.deltaY < 0 ? PASO_ZOOM : 1 / PASO_ZOOM);
-      if (zoom <= 1) reducir(foto);
-      else ponerZoom(foto, Math.min(zoom, ZOOM_MAXIMO));
-      // Al alejar del todo, que la inercia no pase a la siguiente
-      bloqueadoHasta = Date.now() + ESPERA_RUEDA;
-      return;
-    }
     if (Date.now() < bloqueadoHasta || Math.abs(evento.deltaX) > Math.abs(evento.deltaY)) return;
     if (Math.sign(evento.deltaY) !== Math.sign(acumulado)) acumulado = 0;
     acumulado += evento.deltaY;
@@ -1087,7 +1026,7 @@
     pasar(pasos);
   }, { capture: true, passive: false });
 
-  // ← →: otro medio del tuit o, si solo tiene un vídeo, adelante y atrás en él
+  // ← →: otro vídeo del tuit o, si solo tiene uno, adelante y atrás en él
   function moverHorizontal(pasos) {
     const bloque = pista.children[actual];
     if (!bloque || bloque.tuit.medios.length > 1) {
@@ -1106,7 +1045,7 @@
       ArrowUp: () => pasar(-1),
       ArrowLeft: () => moverHorizontal(-1),
       ArrowRight: () => moverHorizontal(1),
-      Escape: () => (fotoAmpliada() ? reducir(fotoAmpliada()) : salir()),
+      Escape: salir,
       m: alternarSonido,
       c: alternarSubtitulos,
       r: alternarPanel,

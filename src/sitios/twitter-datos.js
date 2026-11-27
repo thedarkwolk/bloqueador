@@ -6,8 +6,8 @@
  * sus variables y el token "Bearer" cambian con cada versión de X, así que se
  * sacan de sus scripts en vez de escribirlos aquí.
  * También las citas de un tuit (SearchByRawQuery, la de la página de citas) y
- * las fotos y vídeos de una cuenta (pestaña Multimedia) o de una búsqueda, y las
- * respuestas a un tuit.
+ * las fotos y vídeos de una cuenta (pestaña Multimedia), los vídeos de una
+ * búsqueda y las respuestas a un tuit.
  * Lo usan twitter-cuentas.js (twitter-datos-clasica.js es lo mismo para la web
  * anterior) y twitter-galeria.js, twitter-citas.js y twitter-visor.js (estas dos
  * en las dos webs: en la clásica tiran de los IDs guardados la última vez que se
@@ -282,12 +282,10 @@ globalThis.BloqueadorTwitterDatos = (() => {
         .sort((a, b) => (b.bitrate ?? 0) - (a.bitrate ?? 0));
       return {
         id: media.id_str,
+        numero: i + 1,
         ruta: rutaDe(media)
           ?? `/${autorDe(nodo)?.core?.screen_name ?? 'i'}/status/${nodo.rest_id}/${media.type === 'photo' ? 'photo' : 'video'}/${i + 1}`,
-        original: media.media_url_https,
         imagen: `${media.media_url_https}?name=small`,
-        ancho: media.original_info?.width,
-        alto: media.original_info?.height,
         texto: media.ext_alt_text ?? '',
         esVideo: media.type !== 'photo',
         mp4: mp4s.length ? mp4ParaPantalla(mp4s).url : '',
@@ -298,7 +296,7 @@ globalThis.BloqueadorTwitterDatos = (() => {
       };
     });
 
-  // Un tuit con sus medios, para el visor (solo los que sabe enseñar). Los de la
+  // Un tuit con sus vídeos, para el visor (solo los que sabe enseñar). Los de la
   // cuadrícula de fotos vienen incompletos (`parcial`): sin avatar, sin si te
   // gustan y con el enlace de la foto en el texto
   function tuitDe(nodo) {
@@ -316,7 +314,7 @@ globalThis.BloqueadorTwitterDatos = (() => {
       respuestas: nodo.counts?.reply_count ?? 0,
       gustado: Boolean(nodo.perspective?.favorited),
       reposteado: Boolean(nodo.perspective?.retweeted),
-      medios: mediosDe(nodo).filter((m) => !m.esVideo || m.mp4)
+      medios: mediosDe(nodo).filter((m) => m.mp4)
     };
   }
 
@@ -366,20 +364,19 @@ globalThis.BloqueadorTwitterDatos = (() => {
   const nodoDe = (contenido) => desenvolver(contenido?.content?.tweet_results?.result ?? contenido?.tweet_results?.result);
 
   /**
-   * Tuits con fotos o vídeos (`tipo`: photo o video) de una cuenta, de más nuevos
-   * a más antiguos, o los más destacados de una búsqueda: { tuits, cursor }
+   * Tuits con vídeos de una cuenta, de más nuevos a más antiguos, o los más
+   * destacados de una búsqueda: { tuits, cursor }
    */
-  async function buscarMedios({ usuario, consulta }, tipo, cursor) {
-    const foto = tipo === 'photo';
+  async function buscarMedios({ usuario, consulta }, cursor) {
     let instrucciones;
     if (consulta) {
       const datos = await consultar('SearchByRawQuery', {
-        rawQuery: `${consulta} filter:${foto ? 'images' : 'native_video'}`, product: 'Top', querySource: 'typed_query',
+        rawQuery: `${consulta} filter:native_video`, product: 'Top', querySource: 'typed_query',
         count: 20, cursor, withMediaGridTweet: false
       });
       instrucciones = datos?.search_by_raw_query?.search_timeline?.timeline?.instructions;
     } else {
-      const datos = await consultar(foto ? 'UserPhotoTimeline' : 'UserVideoTimeline', { screenName: usuario, count: 20, cursor });
+      const datos = await consultar('UserVideoTimeline', { screenName: usuario, count: 20, cursor });
       // Cada pestaña llega en su campo: profile_user_…_timeline
       instrucciones = Object.values(datos?.user_result_by_screen_name?.result ?? {})
         .find((campo) => campo?.timeline?.instructions)?.timeline.instructions;
@@ -394,7 +391,7 @@ globalThis.BloqueadorTwitterDatos = (() => {
     ]
       .filter(({ id }) => /(^|-)tweet-\d+$/.test(id ?? '') && !/promoted/.test(id))
       .map(({ contenido }) => tuitDe(nodoDe(contenido)))
-      .filter((tuit) => tuit?.medios.some((m) => m.esVideo !== foto));
+      .filter((tuit) => tuit?.medios.length);
     return { tuits, cursor: cursorDe(entradas) };
   }
 
@@ -405,7 +402,7 @@ globalThis.BloqueadorTwitterDatos = (() => {
     return entradasDe(datos?.threaded_conversation_with_injections_v2?.instructions);
   }
 
-  /** Un tuit con sus medios: el que X ya tiene cargado o, si no, se pide */
+  /** Un tuit con sus vídeos: el que X ya tiene cargado o, si no, se pide */
   async function buscarTuit(id) {
     const cargado = tuitDe(await BloqueadorTwitter.pedirTuit(id));
     if (cargado?.medios.length && !cargado.parcial) return cargado;

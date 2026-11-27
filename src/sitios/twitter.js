@@ -93,6 +93,8 @@
     // La lista virtualizada de X no hace caso a las celdas que miden 0 y deja
     // su hueco: con 1 px sí recoloca las siguientes
     anuncios: 'main li[data-index] { min-height: 1px; }',
+    // La lupa del cursor sobre las imágenes (clases de la web nueva)
+    sinLupa: ':is(.cursor-zoom-in, .cursor-zoom-out, [style*="cursor: zoom-"]) { cursor: pointer !important; }',
     // El menú ocupa todo el alto libre hasta el usuario: el botón, al final
     postAbajo: `
       [data-rail-overflow] > :has(> #sidebar-compose-post),
